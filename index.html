@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>猿类 RPG</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #map, #battle { margin: 20px; }
+        button { padding: 10px; margin: 5px; }
+        #battleLog { text-align: left; max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div id="map">
+        <h1>选择一个领地</h1>
+        <button onclick="startBattle(1)">领地 1</button>
+        <button onclick="startBattle(2)">领地 2</button>
+        <button onclick="startBattle(3)">领地 3</button>
+    </div>
+
+    <div id="battle" style="display:none;">
+        <h1>战斗</h1>
+        <div id="playerStats"></div>
+        <div id="opponentStats"></div>
+        <button onclick="playerAttack()">攻击</button>
+        <button onclick="eatBanana()" id="bananaButton" style="display:none;">吃香蕉</button>
+        <button onclick="returnToMap()" id="returnButton" style="display:none;">返回地图</button>
+        <div id="battleLog"></div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
