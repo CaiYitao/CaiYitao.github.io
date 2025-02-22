@@ -2,115 +2,37 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>猩猩争霸RPG</title>
+  <title>猩猩争霸RPG - 动画版</title>
   <style>
     body {
-      font-family: sans-serif;
       margin: 0;
       padding: 0;
-      background: #e0f7fa;
-    }
-    #container {
-      width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background: #fff;
-      border: 1px solid #ccc;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      position: relative;
-      overflow: hidden;
-    }
-    h1, h2 {
+      background: #222;
+      color: #fff;
+      font-family: Arial, sans-serif;
       text-align: center;
     }
-    .screen {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      padding: 20px;
-      box-sizing: border-box;
-      background: #fff;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-      pointer-events: none;
+    #gameCanvas {
+      background: #000;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #444;
     }
-    .screen.active {
-      opacity: 1;
-      pointer-events: auto;
+    #ui {
+      margin-top: 10px;
     }
     button {
-      margin: 5px;
-      padding: 10px 20px;
       font-size: 16px;
+      padding: 10px 20px;
+      margin: 5px;
       cursor: pointer;
-    }
-    #battleLog {
-      background: #f9f9f9;
-      border: 1px solid #ccc;
-      height: 200px;
-      overflow-y: auto;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-    #statusBar {
-      margin-bottom: 10px;
-      padding: 5px;
-      background: #d0f0c0;
-      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div id="container">
-    <h1>猩猩争霸RPG</h1>
-    <div id="statusBar"></div>
-    
-    <!-- 地图界面 -->
-    <div id="mapScreen" class="screen active">
-      <h2>丛林地图</h2>
-      <p style="text-align: center;">选择一个领地挑战：</p>
-      <div style="text-align: center;">
-        <button onclick="startBattle(1)">领地1 (等级1-3)</button>
-        <button onclick="startBattle(2)">领地2 (等级4-6)</button>
-        <button onclick="startBattle(3)">领地3 (等级7-9)</button>
-        <button onclick="startBattle(4)">Alpha领地 (等级10)</button>
-      </div>
-    </div>
-    
-    <!-- 战斗界面 -->
-    <div id="battleScreen" class="screen">
-      <h2>战斗</h2>
-      <div id="battleStatus"></div>
-      <div id="battleLog"></div>
-      <div style="text-align: center;">
-        <button onclick="playerAction('attack')">攻击</button>
-        <button onclick="playerAction('defend')">防御</button>
-        <button onclick="exitBattle()">逃离</button>
-      </div>
-    </div>
-    
-    <!-- 升级提示界面 -->
-    <div id="upgradeScreen" class="screen">
-      <h2>升级提示</h2>
-      <p style="text-align: center;">你获得了香蕉！是否吃香蕉升级？</p>
-      <div style="text-align: center;">
-        <button onclick="eatBanana()">吃香蕉升级</button>
-        <button onclick="backToMap()">暂不升级</button>
-      </div>
-    </div>
-    
-    <!-- 游戏结束界面 -->
-    <div id="gameOverScreen" class="screen">
-      <h2>游戏结束</h2>
-      <p id="gameOverMessage" style="text-align: center;"></p>
-      <div style="text-align: center;">
-        <button onclick="restartGame()">重新开始</button>
-      </div>
-    </div>
-  </div>
-  
+  <h1>猩猩争霸RPG - 动画版</h1>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="ui"></div>
   <script src="game.js"></script>
 </body>
 </html>
