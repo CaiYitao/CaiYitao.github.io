@@ -4,7 +4,7 @@
     "href": "blog.html",
     "title": "我的博客 Blog",
     "section": "",
-    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n我的第一篇交互式文章\n\n\n\nDemo\n\nMath\n\n\n\n\n\n\n\n\n\nOct 26, 2025\n\n\n你的名字\n\n\n\n\n\nNo matching items"
+    "text": "Order By\n      Default\n      \n        Title\n      \n      \n        Date - Oldest\n      \n      \n        Date - Newest\n      \n      \n        Author\n      \n    \n  \n    \n      \n      \n    \n\n\n\n\n\n\n\n\n\n\nRNA folding and design: An AI Driven Approach\n\n\n\nRNA\n\nAI\n\n\n\n\n\n\n\n\n\nOct 26, 2025\n\n\n蔡祎涛\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "publications.html",
@@ -14,11 +14,18 @@
     "text": "title: “学术成果 Publications“"
   },
   {
+    "objectID": "posts/first_post/index.html",
+    "href": "posts/first_post/index.html",
+    "title": "RNA folding and design: An AI Driven Approach",
+    "section": "",
+    "text": "RNA language model with energy-guided training\n\n\n数学公式展示\n我们可以轻松地写出 LaTeX 公式，比如麦克斯韦方程组：\n\\[\n\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0} \\\\\n\\nabla \\cdot \\mathbf{B} = 0 \\\\\n\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\\n\\nabla \\times \\mathbf{B} = \\mu_0 \\left( \\mathbf{J} + \\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t} \\right)\n\\]\n\n\n交互式滑块\n下面是一个用 Observable JS 制作的交互式滑块。拖动它，下面的文字会实时更新！\n// 使用 viewof 关键字创建一个滑块，它的值会绑定到变量 x viewof x = Inputs.range(, {label: “选择一个值”, step: 1, value: 30})"
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "About Me",
     "section": "",
-    "text": "Hello, Welcome to my website.\nI am a PhD student in the Department of Computer Science and Institute of Theorectical Biochemistry at the University of Vienna. My research interests include the intersection of System Biology, Deep Learning, Reinforcement Learning, and General Intelligence.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n我的第一篇交互式文章\n\n\n\nDemo\n\nMath\n\n\n\n\n\n\n\n\n\nOct 26, 2025\n\n\n你的名字\n\n\n\n\n\nNo matching items"
+    "text": "Hello, Welcome to my website.\nI am a PhD student at the Department of Computer Science and Institute for Theorectical Biochemistry at the University of Vienna. My research interests include the intersection of System Biology, Deep Learning, Reinforcement Learning, and General Intelligence.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nRNA folding and design: An AI Driven Approach\n\n\n\nRNA\n\nAI\n\n\n\n\n\n\n\n\n\nOct 26, 2025\n\n\n蔡祎涛\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "about.html",
@@ -26,12 +33,5 @@
     "title": "About",
     "section": "",
     "text": "About this site"
-  },
-  {
-    "objectID": "posts/first_post/index.html",
-    "href": "posts/first_post/index.html",
-    "title": "我的第一篇交互式文章",
-    "section": "",
-    "text": "这是我的第一篇文章，用来展示数学公式和交互元素。\n\n数学公式展示\n我们可以轻松地写出 LaTeX 公式，比如麦克斯韦方程组：\n\\[\n\\nabla \\cdot \\mathbf{E} = \\frac{\\rho}{\\varepsilon_0} \\\\\n\\nabla \\cdot \\mathbf{B} = 0 \\\\\n\\nabla \\times \\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t} \\\\\n\\nabla \\times \\mathbf{B} = \\mu_0 \\left( \\mathbf{J} + \\varepsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t} \\right)\n\\]\n\n\n交互式滑块\n下面是一个用 Observable JS 制作的交互式滑块。拖动它，下面的文字会实时更新！\n// 使用 viewof 关键字创建一个滑块，它的值会绑定到变量 x viewof x = Inputs.range(, {label: “选择一个值”, step: 1, value: 30})"
   }
 ]
