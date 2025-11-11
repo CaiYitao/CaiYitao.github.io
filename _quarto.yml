@@ -4,6 +4,7 @@ project:
 
 website:
   title: "橙橙祎狮子"
+  site-url: https://caiyitao.github.io
   navbar:
     left:
       - href: index.qmd
