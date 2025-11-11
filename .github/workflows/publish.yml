@@ -1,0 +1,44 @@
+# 工作流名称
+name: Render and Publish Website
+
+# 触发条件：当 main 分支有新的 push 时运行
+on:
+  push:
+    branches: [ main ]
+
+# 任务列表
+jobs:
+  build-and-deploy:
+    # 运行环境：使用最新的 Ubuntu 系统
+    runs-on: ubuntu-latest
+    
+    # 授予工作流写入仓库的权限，以便发布页面
+    permissions:
+      contents: write
+      
+    # 任务步骤
+    steps:
+      # 第一步：检出（下载）你的仓库代码
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # 第二步：安装并设置 Quarto
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      # 第三步：使用 Quarto 渲染网站
+      # 它会自动寻找 _quarto.yml 并构建整个项目
+      - name: Render website
+        uses: quarto-dev/quarto-actions/render@v2
+        with:
+          path: .  # 在项目根目录进行渲染
+
+      # 第四步：将构建好的网站发布到 gh-pages 分支
+      - name: Publish to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          # 使用 GitHub 自动提供的令牌进行认证
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # 指定要发布的文件夹是 docs
+          # 这必须和你的 _quarto.yml 里的 output-dir 设置一致
+          publish_dir: ./docs
