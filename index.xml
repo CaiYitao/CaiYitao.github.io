@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>橙橙祎狮子</title>
+<link>https://caiyitao.github.io/</link>
+<atom:link href="https://caiyitao.github.io/index.xml" rel="self" type="application/rss+xml"/>
+<description></description>
+<generator>quarto-1.8.25</generator>
+<lastBuildDate>Sun, 26 Oct 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>RNA folding and design: An AI Driven Approach</title>
+  <dc:creator>蔡祎涛 </dc:creator>
+  <link>https://caiyitao.github.io/posts/first_post/</link>
+  <description><![CDATA[ 
+
+
+
+
+<section id="rna-language-model-with-energy-guided-training" class="level3">
+<h3 class="anchored" data-anchor-id="rna-language-model-with-energy-guided-training">RNA language model with energy-guided training</h3>
+</section>
+<section id="数学公式展示" class="level3">
+<h3 class="anchored" data-anchor-id="数学公式展示">数学公式展示</h3>
+<p>我们可以轻松地写出 LaTeX 公式，比如麦克斯韦方程组：</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Ccdot%20%5Cmathbf%7BE%7D%20=%20%5Cfrac%7B%5Crho%7D%7B%5Cvarepsilon_0%7D%20%5C%5C%0A%5Cnabla%20%5Ccdot%20%5Cmathbf%7BB%7D%20=%200%20%5C%5C%0A%5Cnabla%20%5Ctimes%20%5Cmathbf%7BE%7D%20=%20-%5Cfrac%7B%5Cpartial%20%5Cmathbf%7BB%7D%7D%7B%5Cpartial%20t%7D%20%5C%5C%0A%5Cnabla%20%5Ctimes%20%5Cmathbf%7BB%7D%20=%20%5Cmu_0%20%5Cleft(%20%5Cmathbf%7BJ%7D%20+%20%5Cvarepsilon_0%20%5Cfrac%7B%5Cpartial%20%5Cmathbf%7BE%7D%7D%7B%5Cpartial%20t%7D%20%5Cright)%0A"></p>
+</section>
+<section id="交互式滑块" class="level3">
+<h3 class="anchored" data-anchor-id="交互式滑块">交互式滑块</h3>
+<p>下面是一个用 <a href="https://observablehq.com/">Observable JS</a> 制作的交互式滑块。拖动它，下面的文字会实时更新！</p>
+<p>// 使用 viewof 关键字创建一个滑块，它的值会绑定到变量 x viewof x = Inputs.range(, {label: “选择一个值”, step: 1, value: 30})</p>
+
+
+</section>
+
+ ]]></description>
+  <category>RNA</category>
+  <category>AI</category>
+  <guid>https://caiyitao.github.io/posts/first_post/</guid>
+  <pubDate>Sun, 26 Oct 2025 00:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
