@@ -1,0 +1,13 @@
+---
+title: "About Me"
+listing:
+  contents: posts
+  sort: "date desc"
+  type: default
+  categories: true
+  feed: true
+---
+
+Hello, Welcome to my website.
+
+I am a PhD student at the Department of Computer Science and Institute for Theorectical Biochemistry at the University of Vienna. My research interests include the intersection of System Biology, Deep Learning, Reinforcement Learning, and General Intelligence.

@@ -1,0 +1,26 @@
+---
+title: "RNA folding and design: An AI Driven Approach"
+author: "蔡祎涛"
+date: "2025-10-26"
+categories: [RNA, AI]
+---
+### RNA language model with energy-guided training
+
+### 数学公式展示
+
+我们可以轻松地写出 LaTeX 公式，比如麦克斯韦方程组：
+
+$$
+\nabla \cdot \mathbf{E} = \frac{\rho}{\varepsilon_0} \\
+\nabla \cdot \mathbf{B} = 0 \\
+\nabla \times \mathbf{E} = -\frac{\partial \mathbf{B}}{\partial t} \\
+\nabla \times \mathbf{B} = \mu_0 \left( \mathbf{J} + \varepsilon_0 \frac{\partial \mathbf{E}}{\partial t} \right)
+$$
+
+### 交互式滑块
+
+下面是一个用 [Observable JS](https://observablehq.com/) 制作的交互式滑块。拖动它，下面的文字会实时更新！
+
+```{ojs}
+// 使用 viewof 关键字创建一个滑块，它的值会绑定到变量 x
+viewof x = Inputs.range(, {label: "选择一个值", step: 1, value: 30})

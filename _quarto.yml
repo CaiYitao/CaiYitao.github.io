@@ -1,0 +1,26 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "橙橙祎狮子"
+  navbar:
+    left:
+      - href: index.qmd
+        text: 首页 Home
+      - href: about.qmd
+        text: 简介 About
+      - href: publications.qmd
+        text: 论文 Publications
+      - href: blog.qmd
+        text: 博客 Blog
+format:
+  html:
+    theme:
+      - quartz
+      - brand
+    css: styles.css
+    toc: true
+
+
+

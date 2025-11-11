@@ -1,0 +1,12 @@
+---
+title: "我的博客 Blog"
+listing:
+  contents: posts # 告诉 Quarto 去 posts 文件夹找文章
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: true
+  filter-ui: true
+page-layout: full
+title-block-banner: true
+---
