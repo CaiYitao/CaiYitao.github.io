@@ -8,9 +8,9 @@ website:
   navbar:
     left:
       - href: index.qmd
-        text: 首页 Home
-      - href: about.qmd
-        text: 简介 About
+        text: 自叙小笺 About
+      # - href: about.qmd
+      #   text: 简介 About
       - href: publications.qmd
         text: 论文 Publications
       - href: blog.qmd

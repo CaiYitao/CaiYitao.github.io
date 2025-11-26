@@ -1,5 +1,5 @@
 ---
-title: "About Me"
+title: "自叙小笺 About Me"
 listing:
   contents: posts
   sort: "date desc"
@@ -7,7 +7,9 @@ listing:
   categories: true
   feed: true
 ---
+您好！欢迎来到我的网站。
+我叫蔡祎涛，是维也纳大学的计算机科学部和理论生物化学学院的在读博士生。我的研究兴趣包括系统/合成生物学、深度学习、强化学习以及人脑启发的真智能，以及这个交叉学科在治疗人类疾病和提高人类健康寿命的方向。
 
 Hello, Welcome to my website.
 
-I am a PhD student at the Department of Computer Science and Institute for Theorectical Biochemistry at the University of Vienna. My research interests include the intersection of System Biology, Deep Learning, Reinforcement Learning, and General Intelligence.
+My name is Cai Yitao, I am a PhD student at the Department of Computer Science and Institute for Theorectical Biochemistry at the University of Vienna. My research interests include the intersection of System/Synthetic Biology, Deep Learning, Reinforcement Learning, and True Intelligence.
