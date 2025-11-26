@@ -9,8 +9,8 @@
 <link>https://caiyitao.github.io/</link>
 <atom:link href="https://caiyitao.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
-<generator>quarto-1.8.26</generator>
-<lastBuildDate>Sun, 26 Oct 2025 00:00:00 GMT</lastBuildDate>
+<generator>quarto-1.8.25</generator>
+<lastBuildDate>Sat, 25 Oct 2025 22:00:00 GMT</lastBuildDate>
 <item>
   <title>RNA folding and design: An AI Driven Approach</title>
   <dc:creator>蔡祎涛 </dc:creator>
@@ -91,7 +91,7 @@ font-style: inherit;">})</span></span>
   <category>RNA</category>
   <category>AI</category>
   <guid>https://caiyitao.github.io/posts/first_post/</guid>
-  <pubDate>Sun, 26 Oct 2025 00:00:00 GMT</pubDate>
+  <pubDate>Sat, 25 Oct 2025 22:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
