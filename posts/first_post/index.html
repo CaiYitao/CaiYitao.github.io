@@ -77,7 +77,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-1e2d4cd4c0c187b7887ec59d340d0036.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-2add4ff3cfb885f647f7edd1f8a0f8e7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -105,6 +105,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<style>html{ scroll-behavior: smooth; }</style>
+<!-- Apply saved background theme + language before first paint (avoids a flash). -->
+<script>
+  (function () {
+    var root = document.documentElement;
+    try {
+      root.setAttribute("data-theme", localStorage.getItem("site-theme") || "aurora");
+    } catch (e) { root.setAttribute("data-theme", "aurora"); }
+    try {
+      root.setAttribute("data-lang", localStorage.getItem("site-lang") || "zh");
+    } catch (e) { root.setAttribute("data-lang", "zh"); }
+  })();
+</script>
 <script type="module" src="../../site_libs/quarto-ojs/quarto-ojs-runtime.js"></script>
 <link href="../../site_libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
 
@@ -148,9 +161,9 @@ window.Quarto = {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a href="../../index.html" class="navbar-brand navbar-brand-logo">
+    <a href="../../posts/first_post/index.html" class="navbar-brand navbar-brand-logo">
     </a>
-    <a class="navbar-brand" href="../../index.html">
+    <a class="navbar-brand" href="../../posts/first_post/index.html">
     <span class="navbar-title">橙橙祎狮子</span>
     </a>
   </div>
@@ -171,6 +184,13 @@ window.Quarto = {
   <li class="nav-item">
     <a class="nav-link" href="../../blog.html"> 
 <span class="menu-text">博客 Blog</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/CaiYitao"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
@@ -195,6 +215,212 @@ window.Quarto = {
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
+<!-- Site-wide animated research background (WebGL / three.js).
+     Motif: AI studying RNA structure — a SINGLE-STRAND RNA folding back on itself into
+     stem-loops, hairpins and a multi-loop junction (tertiary fold — cf.
+     https://rna.bgsu.edu/rna3dhub), alongside a graph-neural-network node cloud (the AI).
+     Colours follow the active theme (data-theme on <html>). Falls back to the CSS gradient
+     if WebGL is unavailable. -->
+<div id="bg-gradient" aria-hidden="true"></div>
+<canvas id="bg-webgl" aria-hidden="true"></canvas>
+
+<script type="module">
+  (function () {
+    const canvas = document.getElementById("bg-webgl");
+    if (!canvas) return;
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function hasWebGL() {
+      try {
+        const c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch (e) { return false; }
+    }
+    if (!hasWebGL()) return;
+
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js")
+      .then((THREE) => initScene(THREE))
+      .catch((err) => console.warn("[bg] three.js failed to load; using gradient fallback.", err));
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function initScene(THREE) {
+      canvas.classList.add("is-active");
+      const V = THREE.Vector3;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.011);
+
+      const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 400);
+      camera.position.set(0, 0, 62);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas, antialias: true, alpha: true, powerPreference: "low-power",
+      });
+      renderer.setClearColor(0x000000, 0);
+      function resize() {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setSize(innerWidth, innerHeight, false);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      addEventListener("resize", resize, { passive: true });
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      // ---- RNA stem-loop (hairpin): one strand winds up, loops, and pairs back down ----
+      function hairpin(origin, dir, side, nbp, rise, width, twist, loopR) {
+        dir = dir.clone().normalize();
+        side = side.clone().normalize();
+        const binorm = new V().crossVectors(dir, side).normalize();
+        const s1 = [], s2 = [], rungs = [];
+        for (let i = 0; i < nbp; i++) {
+          const axis = origin.clone().add(dir.clone().multiplyScalar(i * rise));
+          const th = i * twist; // A-form-like winding
+          const off = side.clone().multiplyScalar(Math.cos(th))
+            .add(binorm.clone().multiplyScalar(Math.sin(th)))
+            .multiplyScalar(width / 2);
+          const a = axis.clone().add(off);
+          const b = axis.clone().sub(off);
+          s1.push(a); s2.push(b); rungs.push([a, b]);
+        }
+        const aTop = s1[nbp - 1], bTop = s2[nbp - 1];
+        const loop = [], steps = 7;
+        for (let k = 1; k < steps; k++) {
+          const t = k / steps;
+          const p = aTop.clone().lerp(bTop, t);
+          p.add(dir.clone().multiplyScalar(Math.sin(t * Math.PI) * loopR));
+          loop.push(p);
+        }
+        const backbone = s1.concat(loop, s2.slice().reverse());
+        return { backbone, rungs, entry: s1[0], exit: s2[0] };
+      }
+
+      // cloverleaf-like fold: hairpins radiating from a central junction, lifted to 3D
+      const hps = [];
+      const center = new V(0, -7, 0);
+      [
+        { ang: 90,  tilt:  0.22, n: 8 },
+        { ang: 205, tilt: -0.28, n: 7 },
+        { ang: 330, tilt:  0.16, n: 7 },
+      ].forEach((a) => {
+        const rad = a.ang * Math.PI / 180;
+        const dir = new V(Math.cos(rad), 0.95, Math.sin(rad)).normalize();
+        dir.applyAxisAngle(new V(Math.cos(rad + Math.PI / 2), 0, Math.sin(rad + Math.PI / 2)), a.tilt);
+        const side = new V(0, 1, 0).cross(dir).normalize();
+        const origin = center.clone().add(dir.clone().multiplyScalar(6));
+        hps.push(hairpin(origin, dir, side, a.n, 1.35, 3.2, 0.55, 2.0));
+      });
+      hps.push(hairpin(center.clone().add(new V(0, -2, 0)), new V(0, -1, 0.06), new V(1, 0, 0), 6, 1.35, 3.2, 0.55, 1.8));
+
+      const linkers = [];
+      for (let i = 0; i < hps.length; i++) {
+        const a = hps[i].exit, b = hps[(i + 1) % hps.length].entry;
+        const mid = a.clone().lerp(b, 0.5);
+        mid.add(center.clone().sub(mid).multiplyScalar(0.45));
+        linkers.push(a, mid, mid, b);
+      }
+
+      const backbonePts = [], rungPts = [], nucPts = [];
+      hps.forEach((h) => {
+        for (let i = 0; i < h.backbone.length - 1; i++) backbonePts.push(h.backbone[i], h.backbone[i + 1]);
+        h.rungs.forEach((r) => rungPts.push(r[0], r[1]));
+        h.backbone.forEach((p) => nucPts.push(p));
+      });
+      for (let i = 0; i < linkers.length; i += 2) backbonePts.push(linkers[i], linkers[i + 1]);
+
+      function segGeo(arr) {
+        const g = new THREE.BufferGeometry(), f = [];
+        arr.forEach((v) => f.push(v.x, v.y, v.z));
+        g.setAttribute("position", new THREE.Float32BufferAttribute(f, 3));
+        return g;
+      }
+
+      const mats = {
+        backbone: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.62 }),
+        rung:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.30 }),
+        nuc:      new THREE.PointsMaterial({ size: 0.5, transparent: true, opacity: 0.55, sizeAttenuation: true }),
+        node:     new THREE.PointsMaterial({ size: 0.72, transparent: true, opacity: 0.72, sizeAttenuation: true }),
+        edge:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16 }),
+      };
+
+      const rna = new THREE.Group();
+      rna.add(new THREE.LineSegments(segGeo(backbonePts), mats.backbone));
+      rna.add(new THREE.LineSegments(segGeo(rungPts), mats.rung));
+      rna.add(new THREE.Points(segGeo(nucPts), mats.nuc));
+      rna.position.x = -9;
+      world.add(rna);
+
+      // ---- graph neural network cloud (the AI studying the structure) ----
+      const nodeVecs = [], NODES = 60;
+      for (let i = 0; i < NODES; i++) {
+        nodeVecs.push(new V((Math.random() - 0.5) * 32 + 22, (Math.random() - 0.5) * 42, (Math.random() - 0.5) * 28));
+      }
+      const edgePts = [], LINK = 12;
+      for (let i = 0; i < NODES; i++)
+        for (let j = i + 1; j < NODES; j++)
+          if (nodeVecs[i].distanceTo(nodeVecs[j]) < LINK) edgePts.push(nodeVecs[i], nodeVecs[j]);
+      const gnn = new THREE.Group();
+      gnn.add(new THREE.Points(segGeo(nodeVecs), mats.node));
+      gnn.add(new THREE.LineSegments(segGeo(edgePts), mats.edge));
+      world.add(gnn);
+
+      world.rotation.x = 0.16;
+
+      // ---- theme-driven colours ----
+      function applyTheme() {
+        mats.backbone.color.set(cssVar("--bg-helix", "#2563eb"));
+        mats.rung.color.set(cssVar("--bg-rung", "#14b8a6"));
+        mats.nuc.color.set(cssVar("--bg-helix2", "#0d9488"));
+        mats.node.color.set(cssVar("--bg-node", "#6366f1"));
+        mats.edge.color.set(cssVar("--bg-edge", "#94a3b8"));
+        scene.fog.color.set(cssVar("--bg-fog", "#f7f8fb"));
+      }
+      applyTheme();
+      addEventListener("themechange", applyTheme);
+
+      // ---- mouse parallax ----
+      const target = { x: 0, y: 0 };
+      addEventListener("pointermove", (e) => {
+        target.x = (e.clientX / innerWidth - 0.5) * 0.5;
+        target.y = (e.clientY / innerHeight - 0.5) * 0.5;
+      }, { passive: true });
+
+      let running = true;
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running && !reduceMotion) loop();
+      });
+
+      const clock = new THREE.Clock();
+      function frame() {
+        const t = clock.getElapsedTime();
+        rna.rotation.y = t * 0.07;
+        gnn.rotation.y = -t * 0.04;
+        gnn.rotation.x = Math.sin(t * 0.1) * 0.05;
+        world.rotation.x += (0.16 + target.y - world.rotation.x) * 0.02;
+        camera.position.x += (target.x * 9 - camera.position.x) * 0.03;
+        camera.position.y += (-target.y * 9 - camera.position.y) * 0.03;
+        camera.lookAt(0, -2, 0);
+        renderer.render(scene, camera);
+      }
+      function loop() {
+        if (!running || reduceMotion) return;
+        frame();
+        requestAnimationFrame(loop);
+      }
+      reduceMotion ? frame() : loop();
+    }
+  })();
+</script>
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
@@ -244,24 +470,12 @@ window.Quarto = {
 <section id="交互式滑块" class="level3">
 <h3 class="anchored" data-anchor-id="交互式滑块">交互式滑块</h3>
 <p>下面是一个用 <a href="https://observablehq.com/">Observable JS</a> 制作的交互式滑块。拖动它，下面的文字会实时更新！</p>
-<div class="quarto-ojs-syntax-error">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" data-startfrom="24" data-syntax-error-position="59" data-source-offset="9"><pre class="sourceCode numberSource numberLines java code-with-copy"><code class="sourceCode java" style="counter-reset: source-line 23;"><span id="cb1-24"><a href="#cb1-24"></a>```<span class="op">{</span>ojs<span class="op">}</span></span>
-<span id="cb1-25"><a href="#cb1-25"></a><span class="co">// 使用 viewof 关键字创建一个滑块，它的值会绑定到变量 x</span></span>
-<span id="cb1-26"><a href="#cb1-26"></a>viewof x <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span><span class="op">(,</span> <span class="op">{</span>label<span class="op">:</span> <span class="st">"选择一个值"</span><span class="op">,</span> step<span class="op">:</span> <span class="dv">1</span><span class="op">,</span> value<span class="op">:</span> <span class="dv">30</span><span class="op">})</span></span>
-<span id="cb1-27"><a href="#cb1-27"></a>```</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-error">
-<div class="callout callout-style-default callout-important callout-empty-content callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>OJS Syntax Error (line 26, column 25)Unexpected token
-</div>
-</div>
-<div class="callout-body-container callout-body">
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" data-startfrom="24" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 23;"><span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co">// 使用 viewof 关键字创建一个滑块，它的值会绑定到变量 x</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>viewof x <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">range</span>(<span class="dv">100</span><span class="op">,</span> {<span class="dt">label</span><span class="op">:</span> <span class="st">"选择一个值"</span><span class="op">,</span> <span class="dt">step</span><span class="op">:</span> <span class="dv">1</span><span class="op">,</span> <span class="dt">value</span><span class="op">:</span> <span class="dv">30</span>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-1" data-nodetype="declaration">
 
-</div>
 </div>
 </div>
 </div>
@@ -270,8 +484,61 @@ window.Quarto = {
 </section>
 
 </main> <!-- /main -->
+<!-- Floating background-theme switcher. Persists choice and notifies the WebGL background. -->
+<div id="theme-switch" role="group" aria-label="背景主题 Background theme">
+  <span class="ts-label">主题</span>
+  <button class="ts-swatch ts-aurora" data-theme-value="aurora" title="渐变白 · Aurora" aria-label="渐变白 Aurora"></button>
+  <button class="ts-swatch ts-ember" data-theme-value="ember" title="橙黑 · Ember" aria-label="橙黑 Ember"></button>
+  <button class="ts-swatch ts-onyx" data-theme-value="onyx" title="渐变黑 · Onyx" aria-label="渐变黑 Onyx"></button>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var box = document.getElementById("theme-switch");
+    if (!box) return;
+    var buttons = box.querySelectorAll(".ts-swatch");
+
+    function mark(theme) {
+      buttons.forEach(function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-theme-value") === theme);
+      });
+    }
+
+    function setTheme(theme) {
+      root.setAttribute("data-theme", theme);
+      try { localStorage.setItem("site-theme", theme); } catch (e) {}
+      mark(theme);
+      // notify the WebGL background to re-read its colours
+      window.dispatchEvent(new CustomEvent("themechange", { detail: { theme: theme } }));
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-value")); });
+    });
+
+    mark(root.getAttribute("data-theme") || "aurora");
+
+    // ---- language toggle (used on bilingual posts via .lang-toggle [data-lang-value]) ----
+    function markLang(lang) {
+      document.querySelectorAll(".lang-toggle [data-lang-value]").forEach(function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-lang-value") === lang);
+      });
+    }
+    function setLang(lang) {
+      root.setAttribute("data-lang", lang);
+      try { localStorage.setItem("site-lang", lang); } catch (e) {}
+      markLang(lang);
+    }
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest(".lang-toggle [data-lang-value]");
+      if (btn) setLang(btn.getAttribute("data-lang-value"));
+    });
+    markLang(root.getAttribute("data-lang") || "zh");
+  })();
+</script>
 <script type="ojs-module-contents">
-eyJjb250ZW50cyI6W119
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Ii8vIOS9v+eUqCB2aWV3b2Yg5YWz6ZSu5a2X5Yib5bu65LiA5Liq5ruR5Z2X77yM5a6D55qE5YC85Lya57uR5a6a5Yiw5Y+Y6YePIHhcbnZpZXdvZiB4ID0gSW5wdXRzLnJhbmdlKDEwMCwge2xhYmVsOiBcIumAieaLqeS4gOS4quWAvFwiLCBzdGVwOiAxLCB2YWx1ZTogMzB9KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCd4JykifV19
 </script>
 <script type="module">
 if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
@@ -682,8 +949,22 @@ window._ojs.runtime.interpretFromScriptTags();
   });
   </script>
 </div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 蔡祎涛 Cai Yitao · Built with Quarto · ObservableJS · WebGL</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
 
 
 
 
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
 </body></html>

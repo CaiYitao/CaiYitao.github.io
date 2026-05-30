@@ -8,90 +8,1297 @@
 <title>橙橙祎狮子</title>
 <link>https://caiyitao.github.io/</link>
 <atom:link href="https://caiyitao.github.io/index.xml" rel="self" type="application/rss+xml"/>
-<description></description>
+<description>Cai Yitao · PhD researcher — graph learning, single-cell genomics &amp; RNA folding.</description>
 <generator>quarto-1.8.25</generator>
-<lastBuildDate>Sat, 25 Oct 2025 22:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 11 Nov 2025 23:00:00 GMT</lastBuildDate>
 <item>
-  <title>RNA folding and design: An AI Driven Approach</title>
-  <dc:creator>蔡祎涛 </dc:creator>
-  <link>https://caiyitao.github.io/posts/first_post/</link>
+  <title>Sc-GRIP · 从单细胞数据推断基因互作极性</title>
+  <dc:creator>Carolina E. Atria, 蔡祎涛 Yitao Cai, et al.</dc:creator>
+  <link>https://caiyitao.github.io/posts/2025_icdm_scgrip/</link>
   <description><![CDATA[ 
+<!-- Site-wide animated research background (WebGL / three.js).
+     Motif: AI studying RNA structure — a SINGLE-STRAND RNA folding back on itself into
+     stem-loops, hairpins and a multi-loop junction (tertiary fold — cf.
+     https://rna.bgsu.edu/rna3dhub), alongside a graph-neural-network node cloud (the AI).
+     Colours follow the active theme (data-theme on <html>). Falls back to the CSS gradient
+     if WebGL is unavailable. -->
+
+
+
+<script type="module">
+  (function () {
+    const canvas = document.getElementById("bg-webgl");
+    if (!canvas) return;
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function hasWebGL() {
+      try {
+        const c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch (e) { return false; }
+    }
+    if (!hasWebGL()) return;
+
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js")
+      .then((THREE) => initScene(THREE))
+      .catch((err) => console.warn("[bg] three.js failed to load; using gradient fallback.", err));
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function initScene(THREE) {
+      canvas.classList.add("is-active");
+      const V = THREE.Vector3;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.011);
+
+      const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 400);
+      camera.position.set(0, 0, 62);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas, antialias: true, alpha: true, powerPreference: "low-power",
+      });
+      renderer.setClearColor(0x000000, 0);
+      function resize() {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setSize(innerWidth, innerHeight, false);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      addEventListener("resize", resize, { passive: true });
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      // ---- RNA stem-loop (hairpin): one strand winds up, loops, and pairs back down ----
+      function hairpin(origin, dir, side, nbp, rise, width, twist, loopR) {
+        dir = dir.clone().normalize();
+        side = side.clone().normalize();
+        const binorm = new V().crossVectors(dir, side).normalize();
+        const s1 = [], s2 = [], rungs = [];
+        for (let i = 0; i < nbp; i++) {
+          const axis = origin.clone().add(dir.clone().multiplyScalar(i * rise));
+          const th = i * twist; // A-form-like winding
+          const off = side.clone().multiplyScalar(Math.cos(th))
+            .add(binorm.clone().multiplyScalar(Math.sin(th)))
+            .multiplyScalar(width / 2);
+          const a = axis.clone().add(off);
+          const b = axis.clone().sub(off);
+          s1.push(a); s2.push(b); rungs.push([a, b]);
+        }
+        const aTop = s1[nbp - 1], bTop = s2[nbp - 1];
+        const loop = [], steps = 7;
+        for (let k = 1; k < steps; k++) {
+          const t = k / steps;
+          const p = aTop.clone().lerp(bTop, t);
+          p.add(dir.clone().multiplyScalar(Math.sin(t * Math.PI) * loopR));
+          loop.push(p);
+        }
+        const backbone = s1.concat(loop, s2.slice().reverse());
+        return { backbone, rungs, entry: s1[0], exit: s2[0] };
+      }
+
+      // cloverleaf-like fold: hairpins radiating from a central junction, lifted to 3D
+      const hps = [];
+      const center = new V(0, -7, 0);
+      [
+        { ang: 90,  tilt:  0.22, n: 8 },
+        { ang: 205, tilt: -0.28, n: 7 },
+        { ang: 330, tilt:  0.16, n: 7 },
+      ].forEach((a) => {
+        const rad = a.ang * Math.PI / 180;
+        const dir = new V(Math.cos(rad), 0.95, Math.sin(rad)).normalize();
+        dir.applyAxisAngle(new V(Math.cos(rad + Math.PI / 2), 0, Math.sin(rad + Math.PI / 2)), a.tilt);
+        const side = new V(0, 1, 0).cross(dir).normalize();
+        const origin = center.clone().add(dir.clone().multiplyScalar(6));
+        hps.push(hairpin(origin, dir, side, a.n, 1.35, 3.2, 0.55, 2.0));
+      });
+      hps.push(hairpin(center.clone().add(new V(0, -2, 0)), new V(0, -1, 0.06), new V(1, 0, 0), 6, 1.35, 3.2, 0.55, 1.8));
+
+      const linkers = [];
+      for (let i = 0; i < hps.length; i++) {
+        const a = hps[i].exit, b = hps[(i + 1) % hps.length].entry;
+        const mid = a.clone().lerp(b, 0.5);
+        mid.add(center.clone().sub(mid).multiplyScalar(0.45));
+        linkers.push(a, mid, mid, b);
+      }
+
+      const backbonePts = [], rungPts = [], nucPts = [];
+      hps.forEach((h) => {
+        for (let i = 0; i < h.backbone.length - 1; i++) backbonePts.push(h.backbone[i], h.backbone[i + 1]);
+        h.rungs.forEach((r) => rungPts.push(r[0], r[1]));
+        h.backbone.forEach((p) => nucPts.push(p));
+      });
+      for (let i = 0; i < linkers.length; i += 2) backbonePts.push(linkers[i], linkers[i + 1]);
+
+      function segGeo(arr) {
+        const g = new THREE.BufferGeometry(), f = [];
+        arr.forEach((v) => f.push(v.x, v.y, v.z));
+        g.setAttribute("position", new THREE.Float32BufferAttribute(f, 3));
+        return g;
+      }
+
+      const mats = {
+        backbone: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.62 }),
+        rung:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.30 }),
+        nuc:      new THREE.PointsMaterial({ size: 0.5, transparent: true, opacity: 0.55, sizeAttenuation: true }),
+        node:     new THREE.PointsMaterial({ size: 0.72, transparent: true, opacity: 0.72, sizeAttenuation: true }),
+        edge:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16 }),
+      };
+
+      const rna = new THREE.Group();
+      rna.add(new THREE.LineSegments(segGeo(backbonePts), mats.backbone));
+      rna.add(new THREE.LineSegments(segGeo(rungPts), mats.rung));
+      rna.add(new THREE.Points(segGeo(nucPts), mats.nuc));
+      rna.position.x = -9;
+      world.add(rna);
+
+      // ---- graph neural network cloud (the AI studying the structure) ----
+      const nodeVecs = [], NODES = 60;
+      for (let i = 0; i < NODES; i++) {
+        nodeVecs.push(new V((Math.random() - 0.5) * 32 + 22, (Math.random() - 0.5) * 42, (Math.random() - 0.5) * 28));
+      }
+      const edgePts = [], LINK = 12;
+      for (let i = 0; i < NODES; i++)
+        for (let j = i + 1; j < NODES; j++)
+          if (nodeVecs[i].distanceTo(nodeVecs[j]) < LINK) edgePts.push(nodeVecs[i], nodeVecs[j]);
+      const gnn = new THREE.Group();
+      gnn.add(new THREE.Points(segGeo(nodeVecs), mats.node));
+      gnn.add(new THREE.LineSegments(segGeo(edgePts), mats.edge));
+      world.add(gnn);
+
+      world.rotation.x = 0.16;
+
+      // ---- theme-driven colours ----
+      function applyTheme() {
+        mats.backbone.color.set(cssVar("--bg-helix", "#2563eb"));
+        mats.rung.color.set(cssVar("--bg-rung", "#14b8a6"));
+        mats.nuc.color.set(cssVar("--bg-helix2", "#0d9488"));
+        mats.node.color.set(cssVar("--bg-node", "#6366f1"));
+        mats.edge.color.set(cssVar("--bg-edge", "#94a3b8"));
+        scene.fog.color.set(cssVar("--bg-fog", "#f7f8fb"));
+      }
+      applyTheme();
+      addEventListener("themechange", applyTheme);
+
+      // ---- mouse parallax ----
+      const target = { x: 0, y: 0 };
+      addEventListener("pointermove", (e) => {
+        target.x = (e.clientX / innerWidth - 0.5) * 0.5;
+        target.y = (e.clientY / innerHeight - 0.5) * 0.5;
+      }, { passive: true });
+
+      let running = true;
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running && !reduceMotion) loop();
+      });
+
+      const clock = new THREE.Clock();
+      function frame() {
+        const t = clock.getElapsedTime();
+        rna.rotation.y = t * 0.07;
+        gnn.rotation.y = -t * 0.04;
+        gnn.rotation.x = Math.sin(t * 0.1) * 0.05;
+        world.rotation.x += (0.16 + target.y - world.rotation.x) * 0.02;
+        camera.position.x += (target.x * 9 - camera.position.x) * 0.03;
+        camera.position.y += (-target.y * 9 - camera.position.y) * 0.03;
+        camera.lookAt(0, -2, 0);
+        renderer.render(scene, camera);
+      }
+      function loop() {
+        if (!running || reduceMotion) return;
+        frame();
+        requestAnimationFrame(loop);
+      }
+      reduceMotion ? frame() : loop();
+    }
+  })();
+</script>
 
 
 
 
-<section id="数学公式展示" class="level3">
-<h3 class="anchored" data-anchor-id="数学公式展示">数学公式展示</h3>
-<p>我们可以轻松地写出 LaTeX 公式，比如麦克斯韦方程组：</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Ccdot%20%5Cmathbf%7BE%7D%20=%20%5Cfrac%7B%5Crho%7D%7B%5Cvarepsilon_0%7D%20%5C%5C%0A%5Cnabla%20%5Ccdot%20%5Cmathbf%7BB%7D%20=%200%20%5C%5C%0A%5Cnabla%20%5Ctimes%20%5Cmathbf%7BE%7D%20=%20-%5Cfrac%7B%5Cpartial%20%5Cmathbf%7BB%7D%7D%7B%5Cpartial%20t%7D%20%5C%5C%0A%5Cnabla%20%5Ctimes%20%5Cmathbf%7BB%7D%20=%20%5Cmu_0%20%5Cleft(%20%5Cmathbf%7BJ%7D%20+%20%5Cvarepsilon_0%20%5Cfrac%7B%5Cpartial%20%5Cmathbf%7BE%7D%7D%7B%5Cpartial%20t%7D%20%5Cright)%0A"></p>
-</section>
-<section id="交互式滑块" class="level3">
-<h3 class="anchored" data-anchor-id="交互式滑块">交互式滑块</h3>
-<p>下面是一个用 <a href="https://observablehq.com/">Observable JS</a> 制作的交互式滑块。拖动它，下面的文字会实时更新！</p>
-<div class="quarto-ojs-syntax-error">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" data-startfrom="24" data-syntax-error-position="59" data-source-offset="9" style="background: #f1f3f5;"><pre class="sourceCode numberSource numberLines java code-with-copy"><code class="sourceCode java" style="counter-reset: source-line 23;"><span id="cb1-24">```<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>ojs<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">}</span></span>
-<span id="cb1-25"><span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">// 使用 viewof 关键字创建一个滑块，它的值会绑定到变量 x</span></span>
-<span id="cb1-26">viewof x <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">=</span> Inputs<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">.</span><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">range</span><span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">(,</span> <span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">{</span>label<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"选择一个值"</span><span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">,</span> step<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">,</span> value<span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">30</span><span class="op" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">})</span></span>
-<span id="cb1-27">```</span></code></pre></div></div>
-<div class="cell-output cell-output-error">
-<div class="callout callout-style-default callout-important callout-empty-content callout-titled">
+<div class="post-head">
+  <div class="lang-toggle" aria-label="语言 Language">
+    <button data-lang-value="zh">中文</button>
+    <button data-lang-value="en">EN</button>
+  </div>
+  <span class="i18n-zh" style="font-family:var(--font-sans);font-size:.85rem;color:var(--muted)">IEEE ICDM 2025 · 维也纳大学</span>
+  <span class="i18n-en" style="font-family:var(--font-sans);font-size:.85rem;color:var(--muted)">IEEE ICDM 2025 · University of Vienna</span>
+</div>
+
+<div class="i18n-zh">
+
+<h2 class="anchored">摘要</h2>
+<p>理解基因如何被调控，是众多生物学问题的核心。实验与计算方法已经能告诉我们「哪些基因<em>可能</em>相互作用」，但要判断这种作用的<strong>极性</strong>——究竟是<strong>激活</strong>还是<strong>抑制</strong>——却非常困难。我们提出 <strong>Sc-GRIP</strong>（Single-cell Gene Regulation Interaction Polarity），一个<strong>图卷积框架</strong>，直接从单细胞 RNA 数据中推断转录因子（TF）与目标基因之间互作的方向性。</p>
+<p>Sc-GRIP 把<strong>基因表达谱</strong>与<strong>基因互作图</strong>结合起来，学习基因的隐表示，再用一个<strong>双线性解码器（bilinear decoder）</strong>预测调控极性。该方法可扩展、且可针对特定细胞类型，无需依赖物种特异的先验注释或大量实验验证。</p>
+
+<h2 class="anchored">问题</h2>
+<p>转录因子是一类特殊蛋白，它们结合到 DNA 的特定序列上，决定目标基因被「打开（表达）」还是「关闭」。给定一张已知的 TF–目标基因互作图，图的<em>结构</em>可以从数据直接得到，但每条边的<strong>符号与权重</strong>却随细胞类型与状态而变，难以推断。Sc-GRIP 要解决三个挑战：</p>
+<ol>
+  <li>建模潜在的调控结构；</li>
+  <li>推断每条边的标签（激活 / 抑制）；</li>
+  <li>对生物噪声与细胞异质性保持稳健。</li>
+</ol>
+
+<h2 class="anchored">方法</h2>
+<p>输入是高维、稀疏的<strong>基因表达矩阵</strong>与一张无符号的 <strong>TF–目标基因邻接矩阵</strong>。Sc-GRIP 在图上做卷积、聚合邻居信号，学到每个基因的隐表示；随后用双线性解码器对每条边打分，分数的符号即对应「激活 / 抑制」。由于带标签的极性数据稀少且偏向研究充分的基因，方法采用自监督 / 弱监督的思路，使其能泛化到未见过的转录因子与细胞类型。</p>
+
+</div>
+
+<div class="i18n-en">
+
+<h2 class="anchored">Abstract</h2>
+<p>Understanding how genes are regulated is fundamental to many biological questions. Experimental and computational methods can tell us <em>which</em> genes may interact — but finding the <strong>polarity</strong> of an interaction (whether it <strong>activates</strong> or <strong>represses</strong>) is a non-trivial problem. We introduce <strong>Sc-GRIP</strong> (Single-cell Gene Regulation Interaction Polarity), a <strong>graph convolutional framework</strong> that infers the directionality of transcription-factor (TF) gene interactions directly from single-cell RNA data.</p>
+<p>By combining <strong>gene-expression profiles</strong> with <strong>gene-interaction graphs</strong>, Sc-GRIP learns latent gene representations and predicts regulatory polarity with a <strong>bilinear decoder</strong>. The method is scalable and cell-type-specific, and needs no species-specific prior annotations or extensive biological validation.</p>
+
+<h2 class="anchored">The problem</h2>
+<p>Transcription factors are proteins that bind specific DNA sequences and decide whether a target gene is switched ON (expressed) or OFF. Given a known TF–target graph, the <em>structure</em> can be read from the data, but each edge's <strong>sign and weight</strong> are context-dependent and vary across cell types and conditions. Sc-GRIP tackles three challenges:</p>
+<ol>
+  <li>model the latent regulatory structure,</li>
+  <li>infer the edge labels (activation / repression), and</li>
+  <li>stay robust to biological noise and heterogeneity.</li>
+</ol>
+
+<h2 class="anchored">Method</h2>
+<p>The inputs are high-dimensional, sparse <strong>gene-expression matrices</strong> and an unsigned <strong>TF–target adjacency matrix</strong>. Sc-GRIP convolves over the graph, aggregating neighbour signals into a latent representation per gene; a bilinear decoder then scores each edge, and the sign of the score gives "activation / repression". Because labelled polarity data are scarce and biased toward well-studied genes, training is self- / weakly-supervised so it generalises to unseen TFs and cell types.</p>
+
+</div>
+
+<!-- ============ interactive demo ============ -->
+<div class="demo-card" id="scgrip-demo">
+  <h4 class="i18n-zh anchored">互动：推断互作极性</h4>
+  <h4 class="i18n-en anchored">Interactive: inferring interaction polarity</h4>
+  <p class="demo-sub i18n-zh">点击转录因子 <strong>TF</strong> 切换其活跃状态；点击边上的 <strong>+ / −</strong> 翻转极性。基因依据收到的激活/抑制净效应被「打开」或「关闭」。（示意演示）</p>
+  <p class="demo-sub i18n-en">Click a transcription factor <strong>TF</strong> to toggle it active; click an edge's <strong>+ / −</strong> to flip its polarity. Each gene turns ON/OFF by the net activation/repression it receives. (Illustrative demo.)</p>
+  <svg class="scgrip-svg" viewbox="0 0 560 330" aria-label="signed gene regulatory graph"></svg>
+  <div class="demo-controls">
+    <span class="demo-legend"><span class="swatch" style="background:#10b981"></span><span class="i18n-zh">激活</span><span class="i18n-en">activation (+)</span></span>
+    <span class="demo-legend"><span class="swatch" style="background:#ef4444"></span><span class="i18n-zh">抑制</span><span class="i18n-en">repression (−)</span></span>
+    <span class="demo-legend"><span class="swatch" style="background:#10b981;border-radius:50%"></span><span class="i18n-zh">基因 ON</span><span class="i18n-en">gene ON</span></span>
+    <button class="demo-btn" id="scgrip-reset"><span class="i18n-zh">重置</span><span class="i18n-en">Reset</span></button>
+  </div>
+</div>
+
+<!-- ============ full paper ============ -->
+<h2 class="i18n-zh anchored">全文与引用</h2>
+<h2 class="i18n-en anchored">Full paper &amp; citation</h2>
+<div class="demo-frame-wrap">
+  <div class="demo-frame-bar">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>2025_ICDM_scGRIP.pdf</span>
+    <span class="spacer"></span>
+    <a href="2025_ICDM_scGRIP.pdf" target="_blank" rel="noopener"><span class="i18n-zh">新标签打开</span><span class="i18n-en">Open in new tab</span> ↗</a>
+  </div>
+  <iframe class="demo-frame" src="2025_ICDM_scGRIP.pdf" title="Sc-GRIP paper (PDF)" loading="lazy"></iframe>
+</div>
+
+<details class="pub-bibtex">
+  <summary>BibTeX</summary>
+  <pre><code>@inproceedings{atria2025sc,
+  title     = {Sc-GRIP: a Graph Convolutional Approach to Infer Gene Interaction Polarity from Single-Cell Data},
+  author    = {Atria, Carolina E and Cai, Yitao and Weber, Pascal and Beer, Anna and
+               Kriege, Nils and B{\"o}hm, Christian and Revilla-i-Domingo, Roger and Plant, Claudia},
+  booktitle = {2025 IEEE International Conference on Data Mining (ICDM)},
+  pages     = {1030--1039},
+  year      = {2025},
+  organization = {IEEE}
+}</code></pre>
+</details>
+
+<script>
+(function () {
+  var root = document.getElementById("scgrip-demo");
+  if (!root) return;
+  var svg = root.querySelector(".scgrip-svg");
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  var TFs = [
+    { id: "TF1", x: 95,  y: 120, active: true  },
+    { id: "TF2", x: 95,  y: 235, active: false }
+  ];
+  var genes = [
+    { id: "A", x: 470, y: 55  }, { id: "B", x: 470, y: 120 },
+    { id: "C", x: 470, y: 185 }, { id: "D", x: 470, y: 250 },
+    { id: "E", x: 470, y: 310 }
+  ];
+  var edges0 = [
+    { from: "TF1", to: "A", sign: 1 }, { from: "TF1", to: "B", sign: -1 },
+    { from: "TF1", to: "C", sign: 1 }, { from: "TF2", to: "C", sign: -1 },
+    { from: "TF2", to: "D", sign: 1 }, { from: "TF2", to: "E", sign: -1 },
+    { from: "TF2", to: "B", sign: 1 }
+  ];
+  var edges = edges0.map(function (e) { return { from: e.from, to: e.to, sign: e.sign }; });
+
+  function node(id) {
+    return TFs.find(function (t) { return t.id === id; }) || genes.find(function (g) { return g.id === id; });
+  }
+  function geneState(id) {
+    var net = 0;
+    edges.forEach(function (e) {
+      if (e.to === id) { var tf = node(e.from); if (tf.active) net += e.sign; }
+    });
+    return net > 0 ? 1 : (net < 0 ? -1 : 0);
+  }
+  function mk(tag, attrs, text) {
+    var el = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    if (text != null) el.textContent = text;
+    return el;
+  }
+
+  function render() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var defs = mk("defs");
+    [["arrP", "#10b981"], ["arrN", "#ef4444"], ["arrD", "#9aa3b2"]].forEach(function (a) {
+      var m = mk("marker", { id: a[0], viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "7", markerHeight: "7", orient: "auto-start-reverse" });
+      m.appendChild(mk("path", { d: "M0 0 L10 5 L0 10 z", fill: a[1] }));
+      defs.appendChild(m);
+    });
+    svg.appendChild(defs);
+
+    // edges
+    edges.forEach(function (e, i) {
+      var a = node(e.from), b = node(e.to);
+      var active = a.active;
+      var col = e.sign > 0 ? "#10b981" : "#ef4444";
+      var line = mk("line", {
+        x1: a.x + 26, y1: a.y, x2: b.x - 20, y2: b.y,
+        stroke: active ? col : "#9aa3b2",
+        "stroke-width": active ? 2.6 : 1.4,
+        "stroke-opacity": active ? 0.95 : 0.4,
+        "marker-end": "url(#" + (active ? (e.sign > 0 ? "arrP" : "arrN") : "arrD") + ")"
+      });
+      svg.appendChild(line);
+      // sign toggle badge at midpoint
+      var mx = (a.x + 26 + b.x - 20) / 2, my = (a.y + b.y) / 2;
+      var g = mk("g", { class: "gene", style: "cursor:pointer" });
+      g.appendChild(mk("circle", { cx: mx, cy: my, r: 10, fill: "var(--surface-2)", stroke: col, "stroke-width": 1.5 }));
+      g.appendChild(mk("text", { x: mx, y: my + 5, "text-anchor": "middle", "font-size": "15", "font-weight": "700", fill: col }, e.sign > 0 ? "+" : "−"));
+      g.addEventListener("click", function (ev) { ev.stopPropagation(); edges[i].sign *= -1; render(); });
+      svg.appendChild(g);
+    });
+
+    // TF nodes
+    TFs.forEach(function (t) {
+      var g = mk("g", { class: "gene" });
+      g.appendChild(mk("rect", {
+        x: t.x - 28, y: t.y - 20, width: 56, height: 40, rx: 9,
+        fill: t.active ? "var(--accent)" : "var(--surface-2)",
+        stroke: "var(--accent)", "stroke-width": 2
+      }));
+      g.appendChild(mk("text", { x: t.x, y: t.y + 5, "text-anchor": "middle", "font-size": "14", "font-weight": "700", fill: t.active ? "#fff" : "var(--ink)" }, t.id));
+      g.addEventListener("click", function () { t.active = !t.active; render(); });
+      svg.appendChild(g);
+    });
+
+    // gene nodes
+    genes.forEach(function (gn) {
+      var st = geneState(gn.id);
+      var fill = st > 0 ? "#10b981" : (st < 0 ? "var(--surface-2)" : "var(--surface-2)");
+      var stroke = st > 0 ? "#10b981" : (st < 0 ? "#ef4444" : "var(--muted)");
+      var g = mk("g");
+      g.appendChild(mk("circle", { cx: gn.x, cy: gn.y, r: 18, fill: fill, "fill-opacity": st > 0 ? 0.85 : 1, stroke: stroke, "stroke-width": 2 }));
+      g.appendChild(mk("text", { x: gn.x, y: gn.y + 5, "text-anchor": "middle", "font-size": "13", "font-weight": "700", fill: st > 0 ? "#fff" : "var(--ink)" }, gn.id));
+      svg.appendChild(g);
+    });
+  }
+
+  root.querySelector("#scgrip-reset").addEventListener("click", function () {
+    TFs[0].active = true; TFs[1].active = false;
+    edges = edges0.map(function (e) { return { from: e.from, to: e.to, sign: e.sign }; });
+    render();
+  });
+  render();
+})();
+</script>
+
+
+
+ ]]></description>
+  <category>AI</category>
+  <category>Single-cell</category>
+  <category>Graph Learning</category>
+  <category>Bioinformatics</category>
+  <category>Interactive</category>
+  <guid>https://caiyitao.github.io/posts/2025_icdm_scgrip/</guid>
+  <pubDate>Tue, 11 Nov 2025 23:00:00 GMT</pubDate>
+  <media:content url="https://caiyitao.github.io/posts/2025_icdm_scgrip/thumbnail.svg" medium="image" type="image/svg+xml"/>
+</item>
+<item>
+  <title>深度表示学习 · 第2章：线性与独立结构</title>
+  <dc:creator>蔡祎涛 Cai Yitao</dc:creator>
+  <link>https://caiyitao.github.io/posts/deep-representation-ch2/</link>
+  <description><![CDATA[ 
+<!-- Site-wide animated research background (WebGL / three.js).
+     Motif: AI studying RNA structure — a SINGLE-STRAND RNA folding back on itself into
+     stem-loops, hairpins and a multi-loop junction (tertiary fold — cf.
+     https://rna.bgsu.edu/rna3dhub), alongside a graph-neural-network node cloud (the AI).
+     Colours follow the active theme (data-theme on <html>). Falls back to the CSS gradient
+     if WebGL is unavailable. -->
+
+
+
+<script type="module">
+  (function () {
+    const canvas = document.getElementById("bg-webgl");
+    if (!canvas) return;
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function hasWebGL() {
+      try {
+        const c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch (e) { return false; }
+    }
+    if (!hasWebGL()) return;
+
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js")
+      .then((THREE) => initScene(THREE))
+      .catch((err) => console.warn("[bg] three.js failed to load; using gradient fallback.", err));
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function initScene(THREE) {
+      canvas.classList.add("is-active");
+      const V = THREE.Vector3;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.011);
+
+      const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 400);
+      camera.position.set(0, 0, 62);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas, antialias: true, alpha: true, powerPreference: "low-power",
+      });
+      renderer.setClearColor(0x000000, 0);
+      function resize() {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setSize(innerWidth, innerHeight, false);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      addEventListener("resize", resize, { passive: true });
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      // ---- RNA stem-loop (hairpin): one strand winds up, loops, and pairs back down ----
+      function hairpin(origin, dir, side, nbp, rise, width, twist, loopR) {
+        dir = dir.clone().normalize();
+        side = side.clone().normalize();
+        const binorm = new V().crossVectors(dir, side).normalize();
+        const s1 = [], s2 = [], rungs = [];
+        for (let i = 0; i < nbp; i++) {
+          const axis = origin.clone().add(dir.clone().multiplyScalar(i * rise));
+          const th = i * twist; // A-form-like winding
+          const off = side.clone().multiplyScalar(Math.cos(th))
+            .add(binorm.clone().multiplyScalar(Math.sin(th)))
+            .multiplyScalar(width / 2);
+          const a = axis.clone().add(off);
+          const b = axis.clone().sub(off);
+          s1.push(a); s2.push(b); rungs.push([a, b]);
+        }
+        const aTop = s1[nbp - 1], bTop = s2[nbp - 1];
+        const loop = [], steps = 7;
+        for (let k = 1; k < steps; k++) {
+          const t = k / steps;
+          const p = aTop.clone().lerp(bTop, t);
+          p.add(dir.clone().multiplyScalar(Math.sin(t * Math.PI) * loopR));
+          loop.push(p);
+        }
+        const backbone = s1.concat(loop, s2.slice().reverse());
+        return { backbone, rungs, entry: s1[0], exit: s2[0] };
+      }
+
+      // cloverleaf-like fold: hairpins radiating from a central junction, lifted to 3D
+      const hps = [];
+      const center = new V(0, -7, 0);
+      [
+        { ang: 90,  tilt:  0.22, n: 8 },
+        { ang: 205, tilt: -0.28, n: 7 },
+        { ang: 330, tilt:  0.16, n: 7 },
+      ].forEach((a) => {
+        const rad = a.ang * Math.PI / 180;
+        const dir = new V(Math.cos(rad), 0.95, Math.sin(rad)).normalize();
+        dir.applyAxisAngle(new V(Math.cos(rad + Math.PI / 2), 0, Math.sin(rad + Math.PI / 2)), a.tilt);
+        const side = new V(0, 1, 0).cross(dir).normalize();
+        const origin = center.clone().add(dir.clone().multiplyScalar(6));
+        hps.push(hairpin(origin, dir, side, a.n, 1.35, 3.2, 0.55, 2.0));
+      });
+      hps.push(hairpin(center.clone().add(new V(0, -2, 0)), new V(0, -1, 0.06), new V(1, 0, 0), 6, 1.35, 3.2, 0.55, 1.8));
+
+      const linkers = [];
+      for (let i = 0; i < hps.length; i++) {
+        const a = hps[i].exit, b = hps[(i + 1) % hps.length].entry;
+        const mid = a.clone().lerp(b, 0.5);
+        mid.add(center.clone().sub(mid).multiplyScalar(0.45));
+        linkers.push(a, mid, mid, b);
+      }
+
+      const backbonePts = [], rungPts = [], nucPts = [];
+      hps.forEach((h) => {
+        for (let i = 0; i < h.backbone.length - 1; i++) backbonePts.push(h.backbone[i], h.backbone[i + 1]);
+        h.rungs.forEach((r) => rungPts.push(r[0], r[1]));
+        h.backbone.forEach((p) => nucPts.push(p));
+      });
+      for (let i = 0; i < linkers.length; i += 2) backbonePts.push(linkers[i], linkers[i + 1]);
+
+      function segGeo(arr) {
+        const g = new THREE.BufferGeometry(), f = [];
+        arr.forEach((v) => f.push(v.x, v.y, v.z));
+        g.setAttribute("position", new THREE.Float32BufferAttribute(f, 3));
+        return g;
+      }
+
+      const mats = {
+        backbone: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.62 }),
+        rung:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.30 }),
+        nuc:      new THREE.PointsMaterial({ size: 0.5, transparent: true, opacity: 0.55, sizeAttenuation: true }),
+        node:     new THREE.PointsMaterial({ size: 0.72, transparent: true, opacity: 0.72, sizeAttenuation: true }),
+        edge:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16 }),
+      };
+
+      const rna = new THREE.Group();
+      rna.add(new THREE.LineSegments(segGeo(backbonePts), mats.backbone));
+      rna.add(new THREE.LineSegments(segGeo(rungPts), mats.rung));
+      rna.add(new THREE.Points(segGeo(nucPts), mats.nuc));
+      rna.position.x = -9;
+      world.add(rna);
+
+      // ---- graph neural network cloud (the AI studying the structure) ----
+      const nodeVecs = [], NODES = 60;
+      for (let i = 0; i < NODES; i++) {
+        nodeVecs.push(new V((Math.random() - 0.5) * 32 + 22, (Math.random() - 0.5) * 42, (Math.random() - 0.5) * 28));
+      }
+      const edgePts = [], LINK = 12;
+      for (let i = 0; i < NODES; i++)
+        for (let j = i + 1; j < NODES; j++)
+          if (nodeVecs[i].distanceTo(nodeVecs[j]) < LINK) edgePts.push(nodeVecs[i], nodeVecs[j]);
+      const gnn = new THREE.Group();
+      gnn.add(new THREE.Points(segGeo(nodeVecs), mats.node));
+      gnn.add(new THREE.LineSegments(segGeo(edgePts), mats.edge));
+      world.add(gnn);
+
+      world.rotation.x = 0.16;
+
+      // ---- theme-driven colours ----
+      function applyTheme() {
+        mats.backbone.color.set(cssVar("--bg-helix", "#2563eb"));
+        mats.rung.color.set(cssVar("--bg-rung", "#14b8a6"));
+        mats.nuc.color.set(cssVar("--bg-helix2", "#0d9488"));
+        mats.node.color.set(cssVar("--bg-node", "#6366f1"));
+        mats.edge.color.set(cssVar("--bg-edge", "#94a3b8"));
+        scene.fog.color.set(cssVar("--bg-fog", "#f7f8fb"));
+      }
+      applyTheme();
+      addEventListener("themechange", applyTheme);
+
+      // ---- mouse parallax ----
+      const target = { x: 0, y: 0 };
+      addEventListener("pointermove", (e) => {
+        target.x = (e.clientX / innerWidth - 0.5) * 0.5;
+        target.y = (e.clientY / innerHeight - 0.5) * 0.5;
+      }, { passive: true });
+
+      let running = true;
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running && !reduceMotion) loop();
+      });
+
+      const clock = new THREE.Clock();
+      function frame() {
+        const t = clock.getElapsedTime();
+        rna.rotation.y = t * 0.07;
+        gnn.rotation.y = -t * 0.04;
+        gnn.rotation.x = Math.sin(t * 0.1) * 0.05;
+        world.rotation.x += (0.16 + target.y - world.rotation.x) * 0.02;
+        camera.position.x += (target.x * 9 - camera.position.x) * 0.03;
+        camera.position.y += (-target.y * 9 - camera.position.y) * 0.03;
+        camera.lookAt(0, -2, 0);
+        renderer.render(scene, camera);
+      }
+      function loop() {
+        if (!running || reduceMotion) return;
+        frame();
+        requestAnimationFrame(loop);
+      }
+      reduceMotion ? frame() : loop();
+    }
+  })();
+</script>
+
+
+
+
+<p>线性与独立结构是表示学习的地基：从 <strong>PCA</strong> 找主轴，到 <strong>ICA</strong> 拆出独立成分，再到 <strong>稀疏编码 / 字典学习</strong> 学到过完备而可解释的基。本篇把 Ma 实验室《Deep Representation Learning》第 2 章做成一个<strong>可玩的 Pluto + Makie 笔记本</strong>——拖动参数，图形即时回应。</p>
+<blockquote class="blockquote">
+<p>Linear and independent structure is the bedrock of representation learning — from <strong>PCA</strong> to <strong>ICA</strong> to <strong>sparse coding / dictionary learning</strong>. This is Chapter 2 of Ma Lab’s <em>Deep Representation Learning</em>, rebuilt as a playable Pluto + Makie notebook where every figure responds to your input.</p>
+</blockquote>
+<div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>OJS Syntax Error (line 26, column 25)Unexpected token
+Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
+<p>该笔记本体积较大、运行时会在浏览器中执行交互逻辑，首次加载请稍候片刻。This notebook is large and runs interactively in your browser — please allow a moment to load.</p>
+</div>
+</div>
+<div class="demo-frame-wrap">
+  <div class="demo-frame-bar">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>deep-representation-learning · ch.2 · pluto + makie</span>
+    <span class="spacer"></span>
+    <a href="chap2.html" target="_blank" rel="noopener">在新标签打开 ↗</a>
+  </div>
+  <iframe class="demo-frame" src="chap2.html" title="Deep Representation Learning Chapter 2 — interactive Pluto notebook" loading="lazy"></iframe>
+</div>
 
-</div>
-</div>
-</div>
+
+
+ ]]></description>
+  <category>AI</category>
+  <category>Representation Learning</category>
+  <category>Interactive</category>
+  <category>Deep Learning</category>
+  <guid>https://caiyitao.github.io/posts/deep-representation-ch2/</guid>
+  <pubDate>Thu, 29 May 2025 22:00:00 GMT</pubDate>
+  <media:content url="https://caiyitao.github.io/posts/deep-representation-ch2/thumbnail.svg" medium="image" type="image/svg+xml"/>
+</item>
+<item>
+  <title>Nussinov–Jacobson RNA 折叠算法 · 互动教程</title>
+  <dc:creator>蔡祎涛 Cai Yitao</dc:creator>
+  <link>https://caiyitao.github.io/posts/nussinov/</link>
+  <description><![CDATA[ 
+<!-- Site-wide animated research background (WebGL / three.js).
+     Motif: AI studying RNA structure — a SINGLE-STRAND RNA folding back on itself into
+     stem-loops, hairpins and a multi-loop junction (tertiary fold — cf.
+     https://rna.bgsu.edu/rna3dhub), alongside a graph-neural-network node cloud (the AI).
+     Colours follow the active theme (data-theme on <html>). Falls back to the CSS gradient
+     if WebGL is unavailable. -->
+
+
+
+<script type="module">
+  (function () {
+    const canvas = document.getElementById("bg-webgl");
+    if (!canvas) return;
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function hasWebGL() {
+      try {
+        const c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch (e) { return false; }
+    }
+    if (!hasWebGL()) return;
+
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js")
+      .then((THREE) => initScene(THREE))
+      .catch((err) => console.warn("[bg] three.js failed to load; using gradient fallback.", err));
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function initScene(THREE) {
+      canvas.classList.add("is-active");
+      const V = THREE.Vector3;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.011);
+
+      const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 400);
+      camera.position.set(0, 0, 62);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas, antialias: true, alpha: true, powerPreference: "low-power",
+      });
+      renderer.setClearColor(0x000000, 0);
+      function resize() {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setSize(innerWidth, innerHeight, false);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      addEventListener("resize", resize, { passive: true });
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      // ---- RNA stem-loop (hairpin): one strand winds up, loops, and pairs back down ----
+      function hairpin(origin, dir, side, nbp, rise, width, twist, loopR) {
+        dir = dir.clone().normalize();
+        side = side.clone().normalize();
+        const binorm = new V().crossVectors(dir, side).normalize();
+        const s1 = [], s2 = [], rungs = [];
+        for (let i = 0; i < nbp; i++) {
+          const axis = origin.clone().add(dir.clone().multiplyScalar(i * rise));
+          const th = i * twist; // A-form-like winding
+          const off = side.clone().multiplyScalar(Math.cos(th))
+            .add(binorm.clone().multiplyScalar(Math.sin(th)))
+            .multiplyScalar(width / 2);
+          const a = axis.clone().add(off);
+          const b = axis.clone().sub(off);
+          s1.push(a); s2.push(b); rungs.push([a, b]);
+        }
+        const aTop = s1[nbp - 1], bTop = s2[nbp - 1];
+        const loop = [], steps = 7;
+        for (let k = 1; k < steps; k++) {
+          const t = k / steps;
+          const p = aTop.clone().lerp(bTop, t);
+          p.add(dir.clone().multiplyScalar(Math.sin(t * Math.PI) * loopR));
+          loop.push(p);
+        }
+        const backbone = s1.concat(loop, s2.slice().reverse());
+        return { backbone, rungs, entry: s1[0], exit: s2[0] };
+      }
+
+      // cloverleaf-like fold: hairpins radiating from a central junction, lifted to 3D
+      const hps = [];
+      const center = new V(0, -7, 0);
+      [
+        { ang: 90,  tilt:  0.22, n: 8 },
+        { ang: 205, tilt: -0.28, n: 7 },
+        { ang: 330, tilt:  0.16, n: 7 },
+      ].forEach((a) => {
+        const rad = a.ang * Math.PI / 180;
+        const dir = new V(Math.cos(rad), 0.95, Math.sin(rad)).normalize();
+        dir.applyAxisAngle(new V(Math.cos(rad + Math.PI / 2), 0, Math.sin(rad + Math.PI / 2)), a.tilt);
+        const side = new V(0, 1, 0).cross(dir).normalize();
+        const origin = center.clone().add(dir.clone().multiplyScalar(6));
+        hps.push(hairpin(origin, dir, side, a.n, 1.35, 3.2, 0.55, 2.0));
+      });
+      hps.push(hairpin(center.clone().add(new V(0, -2, 0)), new V(0, -1, 0.06), new V(1, 0, 0), 6, 1.35, 3.2, 0.55, 1.8));
+
+      const linkers = [];
+      for (let i = 0; i < hps.length; i++) {
+        const a = hps[i].exit, b = hps[(i + 1) % hps.length].entry;
+        const mid = a.clone().lerp(b, 0.5);
+        mid.add(center.clone().sub(mid).multiplyScalar(0.45));
+        linkers.push(a, mid, mid, b);
+      }
+
+      const backbonePts = [], rungPts = [], nucPts = [];
+      hps.forEach((h) => {
+        for (let i = 0; i < h.backbone.length - 1; i++) backbonePts.push(h.backbone[i], h.backbone[i + 1]);
+        h.rungs.forEach((r) => rungPts.push(r[0], r[1]));
+        h.backbone.forEach((p) => nucPts.push(p));
+      });
+      for (let i = 0; i < linkers.length; i += 2) backbonePts.push(linkers[i], linkers[i + 1]);
+
+      function segGeo(arr) {
+        const g = new THREE.BufferGeometry(), f = [];
+        arr.forEach((v) => f.push(v.x, v.y, v.z));
+        g.setAttribute("position", new THREE.Float32BufferAttribute(f, 3));
+        return g;
+      }
+
+      const mats = {
+        backbone: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.62 }),
+        rung:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.30 }),
+        nuc:      new THREE.PointsMaterial({ size: 0.5, transparent: true, opacity: 0.55, sizeAttenuation: true }),
+        node:     new THREE.PointsMaterial({ size: 0.72, transparent: true, opacity: 0.72, sizeAttenuation: true }),
+        edge:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16 }),
+      };
+
+      const rna = new THREE.Group();
+      rna.add(new THREE.LineSegments(segGeo(backbonePts), mats.backbone));
+      rna.add(new THREE.LineSegments(segGeo(rungPts), mats.rung));
+      rna.add(new THREE.Points(segGeo(nucPts), mats.nuc));
+      rna.position.x = -9;
+      world.add(rna);
+
+      // ---- graph neural network cloud (the AI studying the structure) ----
+      const nodeVecs = [], NODES = 60;
+      for (let i = 0; i < NODES; i++) {
+        nodeVecs.push(new V((Math.random() - 0.5) * 32 + 22, (Math.random() - 0.5) * 42, (Math.random() - 0.5) * 28));
+      }
+      const edgePts = [], LINK = 12;
+      for (let i = 0; i < NODES; i++)
+        for (let j = i + 1; j < NODES; j++)
+          if (nodeVecs[i].distanceTo(nodeVecs[j]) < LINK) edgePts.push(nodeVecs[i], nodeVecs[j]);
+      const gnn = new THREE.Group();
+      gnn.add(new THREE.Points(segGeo(nodeVecs), mats.node));
+      gnn.add(new THREE.LineSegments(segGeo(edgePts), mats.edge));
+      world.add(gnn);
+
+      world.rotation.x = 0.16;
+
+      // ---- theme-driven colours ----
+      function applyTheme() {
+        mats.backbone.color.set(cssVar("--bg-helix", "#2563eb"));
+        mats.rung.color.set(cssVar("--bg-rung", "#14b8a6"));
+        mats.nuc.color.set(cssVar("--bg-helix2", "#0d9488"));
+        mats.node.color.set(cssVar("--bg-node", "#6366f1"));
+        mats.edge.color.set(cssVar("--bg-edge", "#94a3b8"));
+        scene.fog.color.set(cssVar("--bg-fog", "#f7f8fb"));
+      }
+      applyTheme();
+      addEventListener("themechange", applyTheme);
+
+      // ---- mouse parallax ----
+      const target = { x: 0, y: 0 };
+      addEventListener("pointermove", (e) => {
+        target.x = (e.clientX / innerWidth - 0.5) * 0.5;
+        target.y = (e.clientY / innerHeight - 0.5) * 0.5;
+      }, { passive: true });
+
+      let running = true;
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running && !reduceMotion) loop();
+      });
+
+      const clock = new THREE.Clock();
+      function frame() {
+        const t = clock.getElapsedTime();
+        rna.rotation.y = t * 0.07;
+        gnn.rotation.y = -t * 0.04;
+        gnn.rotation.x = Math.sin(t * 0.1) * 0.05;
+        world.rotation.x += (0.16 + target.y - world.rotation.x) * 0.02;
+        camera.position.x += (target.x * 9 - camera.position.x) * 0.03;
+        camera.position.y += (-target.y * 9 - camera.position.y) * 0.03;
+        camera.lookAt(0, -2, 0);
+        renderer.render(scene, camera);
+      }
+      function loop() {
+        if (!running || reduceMotion) return;
+        frame();
+        requestAnimationFrame(loop);
+      }
+      reduceMotion ? frame() : loop();
+    }
+  })();
+</script>
+
+
+
+
+<p>RNA 是<strong>单链</strong>分子——它会自我折叠、链内配对，形成发夹（hairpin）、茎环（stem-loop）、内环与多分支接头等二级与三级结构，而这些结构往往直接决定其功能。<strong>Nussinov–Jacobson 算法</strong>用动态规划求解「最多碱基配对」这一最优化问题，是理解 RNA 折叠的第一块基石。</p>
+<blockquote class="blockquote">
+<p>RNA is a <strong>single strand</strong> that folds back on itself — intramolecular base pairing builds hairpins, stem-loops, internal loops and multi-loop junctions that govern its function. The <strong>Nussinov–Jacobson algorithm</strong> uses dynamic programming to maximise base pairing, the classic entry point to RNA-folding prediction.</p>
+</blockquote>
+<p>下面的互动页面让你亲手输入序列、逐格观察 DP 矩阵的填充过程，并回溯出最优的碱基配对弧线。</p>
+<div class="demo-frame-wrap">
+  <div class="demo-frame-bar">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>nussinov-jacobson · interactive</span>
+    <span class="spacer"></span>
+    <a href="nussinov.html" target="_blank" rel="noopener">在新标签打开 ↗</a>
+  </div>
+  <iframe class="demo-frame" src="nussinov.html" title="Nussinov–Jacobson RNA folding interactive tutorial" loading="lazy"></iframe>
 </div>
 
 
-</section>
 
  ]]></description>
   <category>RNA</category>
+  <category>Algorithm</category>
+  <category>Interactive</category>
+  <category>Bioinformatics</category>
+  <guid>https://caiyitao.github.io/posts/nussinov/</guid>
+  <pubDate>Mon, 12 May 2025 22:00:00 GMT</pubDate>
+  <media:content url="https://caiyitao.github.io/posts/nussinov/thumbnail.svg" medium="image" type="image/svg+xml"/>
+</item>
+<item>
+  <title>InsightDerm · 全切片图像的皮肤癌智能诊断（硕士论文）</title>
+  <dc:creator>蔡祎涛 Yitao Cai</dc:creator>
+  <link>https://caiyitao.github.io/posts/Master_Thesis/</link>
+  <description><![CDATA[ 
+<!-- Site-wide animated research background (WebGL / three.js).
+     Motif: AI studying RNA structure — a SINGLE-STRAND RNA folding back on itself into
+     stem-loops, hairpins and a multi-loop junction (tertiary fold — cf.
+     https://rna.bgsu.edu/rna3dhub), alongside a graph-neural-network node cloud (the AI).
+     Colours follow the active theme (data-theme on <html>). Falls back to the CSS gradient
+     if WebGL is unavailable. -->
+
+
+
+<script type="module">
+  (function () {
+    const canvas = document.getElementById("bg-webgl");
+    if (!canvas) return;
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function hasWebGL() {
+      try {
+        const c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch (e) { return false; }
+    }
+    if (!hasWebGL()) return;
+
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js")
+      .then((THREE) => initScene(THREE))
+      .catch((err) => console.warn("[bg] three.js failed to load; using gradient fallback.", err));
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function initScene(THREE) {
+      canvas.classList.add("is-active");
+      const V = THREE.Vector3;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.011);
+
+      const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 400);
+      camera.position.set(0, 0, 62);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas, antialias: true, alpha: true, powerPreference: "low-power",
+      });
+      renderer.setClearColor(0x000000, 0);
+      function resize() {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setSize(innerWidth, innerHeight, false);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      addEventListener("resize", resize, { passive: true });
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      // ---- RNA stem-loop (hairpin): one strand winds up, loops, and pairs back down ----
+      function hairpin(origin, dir, side, nbp, rise, width, twist, loopR) {
+        dir = dir.clone().normalize();
+        side = side.clone().normalize();
+        const binorm = new V().crossVectors(dir, side).normalize();
+        const s1 = [], s2 = [], rungs = [];
+        for (let i = 0; i < nbp; i++) {
+          const axis = origin.clone().add(dir.clone().multiplyScalar(i * rise));
+          const th = i * twist; // A-form-like winding
+          const off = side.clone().multiplyScalar(Math.cos(th))
+            .add(binorm.clone().multiplyScalar(Math.sin(th)))
+            .multiplyScalar(width / 2);
+          const a = axis.clone().add(off);
+          const b = axis.clone().sub(off);
+          s1.push(a); s2.push(b); rungs.push([a, b]);
+        }
+        const aTop = s1[nbp - 1], bTop = s2[nbp - 1];
+        const loop = [], steps = 7;
+        for (let k = 1; k < steps; k++) {
+          const t = k / steps;
+          const p = aTop.clone().lerp(bTop, t);
+          p.add(dir.clone().multiplyScalar(Math.sin(t * Math.PI) * loopR));
+          loop.push(p);
+        }
+        const backbone = s1.concat(loop, s2.slice().reverse());
+        return { backbone, rungs, entry: s1[0], exit: s2[0] };
+      }
+
+      // cloverleaf-like fold: hairpins radiating from a central junction, lifted to 3D
+      const hps = [];
+      const center = new V(0, -7, 0);
+      [
+        { ang: 90,  tilt:  0.22, n: 8 },
+        { ang: 205, tilt: -0.28, n: 7 },
+        { ang: 330, tilt:  0.16, n: 7 },
+      ].forEach((a) => {
+        const rad = a.ang * Math.PI / 180;
+        const dir = new V(Math.cos(rad), 0.95, Math.sin(rad)).normalize();
+        dir.applyAxisAngle(new V(Math.cos(rad + Math.PI / 2), 0, Math.sin(rad + Math.PI / 2)), a.tilt);
+        const side = new V(0, 1, 0).cross(dir).normalize();
+        const origin = center.clone().add(dir.clone().multiplyScalar(6));
+        hps.push(hairpin(origin, dir, side, a.n, 1.35, 3.2, 0.55, 2.0));
+      });
+      hps.push(hairpin(center.clone().add(new V(0, -2, 0)), new V(0, -1, 0.06), new V(1, 0, 0), 6, 1.35, 3.2, 0.55, 1.8));
+
+      const linkers = [];
+      for (let i = 0; i < hps.length; i++) {
+        const a = hps[i].exit, b = hps[(i + 1) % hps.length].entry;
+        const mid = a.clone().lerp(b, 0.5);
+        mid.add(center.clone().sub(mid).multiplyScalar(0.45));
+        linkers.push(a, mid, mid, b);
+      }
+
+      const backbonePts = [], rungPts = [], nucPts = [];
+      hps.forEach((h) => {
+        for (let i = 0; i < h.backbone.length - 1; i++) backbonePts.push(h.backbone[i], h.backbone[i + 1]);
+        h.rungs.forEach((r) => rungPts.push(r[0], r[1]));
+        h.backbone.forEach((p) => nucPts.push(p));
+      });
+      for (let i = 0; i < linkers.length; i += 2) backbonePts.push(linkers[i], linkers[i + 1]);
+
+      function segGeo(arr) {
+        const g = new THREE.BufferGeometry(), f = [];
+        arr.forEach((v) => f.push(v.x, v.y, v.z));
+        g.setAttribute("position", new THREE.Float32BufferAttribute(f, 3));
+        return g;
+      }
+
+      const mats = {
+        backbone: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.62 }),
+        rung:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.30 }),
+        nuc:      new THREE.PointsMaterial({ size: 0.5, transparent: true, opacity: 0.55, sizeAttenuation: true }),
+        node:     new THREE.PointsMaterial({ size: 0.72, transparent: true, opacity: 0.72, sizeAttenuation: true }),
+        edge:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16 }),
+      };
+
+      const rna = new THREE.Group();
+      rna.add(new THREE.LineSegments(segGeo(backbonePts), mats.backbone));
+      rna.add(new THREE.LineSegments(segGeo(rungPts), mats.rung));
+      rna.add(new THREE.Points(segGeo(nucPts), mats.nuc));
+      rna.position.x = -9;
+      world.add(rna);
+
+      // ---- graph neural network cloud (the AI studying the structure) ----
+      const nodeVecs = [], NODES = 60;
+      for (let i = 0; i < NODES; i++) {
+        nodeVecs.push(new V((Math.random() - 0.5) * 32 + 22, (Math.random() - 0.5) * 42, (Math.random() - 0.5) * 28));
+      }
+      const edgePts = [], LINK = 12;
+      for (let i = 0; i < NODES; i++)
+        for (let j = i + 1; j < NODES; j++)
+          if (nodeVecs[i].distanceTo(nodeVecs[j]) < LINK) edgePts.push(nodeVecs[i], nodeVecs[j]);
+      const gnn = new THREE.Group();
+      gnn.add(new THREE.Points(segGeo(nodeVecs), mats.node));
+      gnn.add(new THREE.LineSegments(segGeo(edgePts), mats.edge));
+      world.add(gnn);
+
+      world.rotation.x = 0.16;
+
+      // ---- theme-driven colours ----
+      function applyTheme() {
+        mats.backbone.color.set(cssVar("--bg-helix", "#2563eb"));
+        mats.rung.color.set(cssVar("--bg-rung", "#14b8a6"));
+        mats.nuc.color.set(cssVar("--bg-helix2", "#0d9488"));
+        mats.node.color.set(cssVar("--bg-node", "#6366f1"));
+        mats.edge.color.set(cssVar("--bg-edge", "#94a3b8"));
+        scene.fog.color.set(cssVar("--bg-fog", "#f7f8fb"));
+      }
+      applyTheme();
+      addEventListener("themechange", applyTheme);
+
+      // ---- mouse parallax ----
+      const target = { x: 0, y: 0 };
+      addEventListener("pointermove", (e) => {
+        target.x = (e.clientX / innerWidth - 0.5) * 0.5;
+        target.y = (e.clientY / innerHeight - 0.5) * 0.5;
+      }, { passive: true });
+
+      let running = true;
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running && !reduceMotion) loop();
+      });
+
+      const clock = new THREE.Clock();
+      function frame() {
+        const t = clock.getElapsedTime();
+        rna.rotation.y = t * 0.07;
+        gnn.rotation.y = -t * 0.04;
+        gnn.rotation.x = Math.sin(t * 0.1) * 0.05;
+        world.rotation.x += (0.16 + target.y - world.rotation.x) * 0.02;
+        camera.position.x += (target.x * 9 - camera.position.x) * 0.03;
+        camera.position.y += (-target.y * 9 - camera.position.y) * 0.03;
+        camera.lookAt(0, -2, 0);
+        renderer.render(scene, camera);
+      }
+      function loop() {
+        if (!running || reduceMotion) return;
+        frame();
+        requestAnimationFrame(loop);
+      }
+      reduceMotion ? frame() : loop();
+    }
+  })();
+</script>
+
+
+
+
+<div class="post-head">
+  <div class="lang-toggle" aria-label="语言 Language">
+    <button data-lang-value="zh">中文</button>
+    <button data-lang-value="en">EN</button>
+  </div>
+  <span class="i18n-zh" style="font-family:var(--font-sans);font-size:.85rem;color:var(--muted)">硕士论文 · JKU Linz · 人工智能 · 2023</span>
+  <span class="i18n-en" style="font-family:var(--font-sans);font-size:.85rem;color:var(--muted)">MSc Thesis · JKU Linz · Artificial Intelligence · 2023</span>
+</div>
+
+<div class="i18n-zh">
+
+<h2 class="anchored">摘要</h2>
+<p>本研究旨在用深度学习提升基于<strong>全切片图像（Whole-Slide Imaging, WSI）</strong>的皮肤癌诊断。我们使用了 <strong>1108 张 WSI 切片</strong>的数据集，类别高度不平衡。我们在<strong>双流多示例学习（Dual-Stream Multiple-Instance Learning, DSMIL）</strong>框架中引入<strong>关键特征自注意力</strong>与<strong>多头注意力</strong>，提出两种新架构，并用稀疏模块改进了 DSMIL Base。</p>
+<p>其中 <strong>InsightDerm</strong>（Top-K 关键特征多头注意力 + DSMIL）在验证集上取得最佳结果；而更简单的 DSMIL Base 在测试集上表现最优。结果表明，把关键特征与多头注意力引入 WSI 诊断系统是有效的。</p>
+
+<h2 class="anchored">背景：为什么是多示例学习？</h2>
+<p>一张 WSI 是<strong>千兆像素级</strong>的巨幅图像，但通常只有一个<strong>切片级标签</strong>（良性 / 恶性、亚型）。于是我们把每张切片切成成千上万个小图块（patch），整张切片视为一个「<strong>包（bag）</strong>」，图块是包里的「示例（instance）」。<strong>多示例学习</strong>用注意力把图块聚合成切片级判断——而真正起决定作用的，往往只是少数几个<strong>关键图块</strong>（肿瘤区域）。</p>
+
+<h2 class="anchored">方法</h2>
+<ul>
+  <li><strong>注意力多示例学习</strong>：以注意力权重聚合图块特征。</li>
+  <li><strong>双流多示例学习（DSMIL）</strong>：一条流找「关键示例」，另一条流衡量其余示例与它的关系。</li>
+  <li><strong>InsightDerm</strong>：在 DSMIL 之上引入 <em>Top-K 关键特征多头注意力</em>——只聚焦注意力最高的若干图块，并用多头机制从多个角度刻画它们。</li>
+  <li>骨干网络对比：<strong>ConvNeXt</strong>、<strong>Vision GNN</strong>、<strong>Visual Attention Network</strong>。</li>
+</ul>
+
+</div>
+
+<div class="i18n-en">
+
+<h2 class="anchored">Abstract</h2>
+<p>This work enhances deep-learning models for skin-cancer diagnosis from <strong>Whole-Slide Imaging (WSI)</strong>. Using a dataset of <strong>1108 WSI slides</strong> with strong class imbalance, we develop two new architectures by adding <strong>critical-features self-attention</strong> and <strong>multi-head attention</strong> to the <strong>Dual-Stream Multiple-Instance Learning (DSMIL)</strong> framework, and revise the DSMIL Base with sparse modules.</p>
+<p><strong>InsightDerm</strong> (Top-K Critical-Features Multi-Head Attention with DSMIL) achieved the best results on the validation set, while the simpler DSMIL Base outperformed on the test set — demonstrating the value of critical features and multi-head attention for WSI-based diagnosis.</p>
+
+<h2 class="anchored">Background: why multiple-instance learning?</h2>
+<p>A WSI is a <strong>gigapixel</strong> image, yet typically carries a single <strong>slide-level label</strong> (benign / malignant, subtype). So each slide is tiled into thousands of small patches and treated as a <strong>bag</strong>, with patches as <strong>instances</strong>. <strong>Multiple-instance learning</strong> uses attention to pool patches into a slide-level decision — and only a few <strong>critical patches</strong> (the tumour region) usually drive that decision.</p>
+
+<h2 class="anchored">Method</h2>
+<ul>
+  <li><strong>Attention-based MIL</strong>: pool patch features with attention weights.</li>
+  <li><strong>Dual-Stream MIL (DSMIL)</strong>: one stream finds the critical instance, another measures how the rest relate to it.</li>
+  <li><strong>InsightDerm</strong>: adds <em>Top-K Critical-Features Multi-Head Attention</em> on top of DSMIL — attend only to the highest-scoring patches, characterised from several heads.</li>
+  <li>Backbones compared: <strong>ConvNeXt</strong>, <strong>Vision GNN</strong>, <strong>Visual Attention Network</strong>.</li>
+</ul>
+
+</div>
+
+<!-- ============ interactive demo ============ -->
+<div class="demo-card" id="insightderm-demo">
+  <h4 class="i18n-zh anchored">互动：全切片图像的 Top-K 关键图块注意力</h4>
+  <h4 class="i18n-en anchored">Interactive: Top-K critical-patch attention on a whole-slide image</h4>
+  <p class="demo-sub i18n-zh">每个小方格是一张图块。拖动 <strong>K</strong> 选择注意力最高的图块（高亮）；模型据此聚合出切片级的「恶性程度」预测。点击可显示注意力热图。（示意演示）</p>
+  <p class="demo-sub i18n-en">Each cell is a patch. Drag <strong>K</strong> to select the highest-attention patches (highlighted); the model pools them into a slide-level malignancy prediction. Toggle the attention heatmap. (Illustrative demo.)</p>
+  <div class="wsi-grid" id="wsi-grid"></div>
+  <div class="demo-controls">
+    <label>K = <strong><span id="wsi-kval">12</span></strong>&nbsp;<input type="range" id="wsi-k" min="1" max="40" value="12" style="width:160px"></label>
+    <button class="demo-btn" id="wsi-heat"><span class="i18n-zh">显示注意力热图</span><span class="i18n-en">Show attention heatmap</span></button>
+  </div>
+  <div style="margin-top:.8rem;font-family:var(--font-sans);font-size:.85rem">
+    <span class="i18n-zh">切片级预测</span><span class="i18n-en">Slide-level prediction</span>:
+    <strong id="wsi-pred">—</strong>
+    <div class="score-bar"><span id="wsi-score"></span></div>
+    <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:.72rem;margin-top:2px">
+      <span class="i18n-zh">良性</span><span class="i18n-en">benign</span>
+      <span class="i18n-zh">恶性</span><span class="i18n-en">malignant</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ full thesis ============ -->
+<h2 class="i18n-zh anchored">论文全文</h2>
+<h2 class="i18n-en anchored">Full thesis</h2>
+<p class="i18n-zh">完整论文为 PDF（约 81&nbsp;MB，含大量切片图）。</p>
+<p class="i18n-en">The full thesis is a PDF (~81&nbsp;MB, with many slide figures).</p>
+<div class="demo-controls" style="margin-top:0">
+  <a class="demo-btn" href="MasterThesis_YitaoCai.pdf" target="_blank" rel="noopener"><span class="i18n-zh">新标签打开 PDF</span><span class="i18n-en">Open PDF in new tab</span> ↗</a>
+  <button class="demo-btn" id="thesis-load"><span class="i18n-zh">在页面内查看</span><span class="i18n-en">View inline</span></button>
+</div>
+<div id="thesis-frame-host" style="margin-top:1rem"></div>
+
+<script>
+(function () {
+  // ---------- WSI MIL attention demo ----------
+  var demo = document.getElementById("insightderm-demo");
+  if (demo) {
+    var COLS = 18, ROWS = 10, N = COLS * ROWS;
+    var grid = document.getElementById("wsi-grid");
+    grid.style.gridTemplateColumns = "repeat(" + COLS + ", 1fr)";
+
+    // synthetic attention: low background noise + a high "tumour" blob
+    var bx = 5 + Math.random() * (COLS - 10), by = 3 + Math.random() * (ROWS - 6);
+    var att = [], tiles = [];
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+      var d2 = (c - bx) * (c - bx) + (r - by) * (r - by);
+      var a = 0.12 * Math.random() + Math.exp(-d2 / 7) * (0.85 + 0.15 * Math.random());
+      att.push(Math.min(1, a));
+      var t = document.createElement("div");
+      t.className = "tile";
+      grid.appendChild(t);
+      tiles.push(t);
+    }
+    var order = att.map(function (a, i) { return i; }).sort(function (x, y) { return att[y] - att[x]; });
+
+    var heat = false;
+    function update() {
+      var K = +document.getElementById("wsi-k").value;
+      document.getElementById("wsi-kval").textContent = K;
+      var top = {};
+      for (var i = 0; i < K; i++) top[order[i]] = true;
+      var sum = 0;
+      for (var i = 0; i < K; i++) sum += att[order[i]];
+      var score = K ? sum / K : 0;               // mean attention of top-K
+      tiles.forEach(function (t, i) {
+        t.classList.toggle("topk", !!top[i]);
+        if (heat) t.style.background = "rgba(239,68,68," + (0.12 + att[i] * 0.8).toFixed(3) + ")";
+        else t.style.background = "";
+      });
+      var pct = Math.round(score * 100);
+      document.getElementById("wsi-score").style.width = pct + "%";
+      var zh = score > 0.5, mal = score > 0.5;
+      var predZh = mal ? "恶性 (malignant) · " + pct + "%" : "良性 (benign) · " + pct + "%";
+      var predEn = mal ? "malignant · " + pct + "%" : "benign · " + pct + "%";
+      var el = document.getElementById("wsi-pred");
+      el.innerHTML = '<span class="i18n-zh">' + predZh + '</span><span class="i18n-en">' + predEn + '</span>';
+    }
+    document.getElementById("wsi-k").addEventListener("input", update);
+    document.getElementById("wsi-heat").addEventListener("click", function () {
+      heat = !heat; update();
+    });
+    update();
+  }
+
+  // ---------- click-to-load thesis PDF (81 MB) ----------
+  var btn = document.getElementById("thesis-load");
+  if (btn) btn.addEventListener("click", function () {
+    var host = document.getElementById("thesis-frame-host");
+    if (host.querySelector("iframe")) return;
+    host.innerHTML =
+      '<div class="demo-frame-wrap"><div class="demo-frame-bar">' +
+      '<span class="dots"><i></i><i></i><i></i></span><span>MasterThesis_YitaoCai.pdf</span></div>' +
+      '<iframe class="demo-frame" src="MasterThesis_YitaoCai.pdf" title="Master thesis (PDF)"></iframe></div>';
+    btn.style.display = "none";
+  });
+})();
+</script>
+
+
+
+ ]]></description>
   <category>AI</category>
-  <guid>https://caiyitao.github.io/posts/first_post/</guid>
-  <pubDate>Sat, 25 Oct 2025 22:00:00 GMT</pubDate>
+  <category>Deep Learning</category>
+  <category>Medical Imaging</category>
+  <category>Attention</category>
+  <category>Interactive</category>
+  <guid>https://caiyitao.github.io/posts/Master_Thesis/</guid>
+  <pubDate>Wed, 14 Jun 2023 22:00:00 GMT</pubDate>
+  <media:content url="https://caiyitao.github.io/posts/Master_Thesis/thumbnail.svg" medium="image" type="image/svg+xml"/>
 </item>
 </channel>
 </rss>

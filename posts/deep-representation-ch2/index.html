@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="蔡祎涛 Cai Yitao">
+<meta name="dcterms.date" content="2025-05-30">
+<meta name="description" content="以 Pluto + Makie 打造的可玩笔记本，互动游戏化解读 Ma 实验室《Deep Representation Learning》第 2 章——PCA、ICA、稀疏编码与字典学习。A Pluto + Makie interactive lesson on linear &amp; independent structure: PCA, ICA, sparse coding and dictionary learning.">
+
+<title>深度表示学习 · 第2章：线性与独立结构 – 橙橙祎狮子</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-2add4ff3cfb885f647f7edd1f8a0f8e7.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<style>html{ scroll-behavior: smooth; }</style>
+<!-- Apply saved background theme + language before first paint (avoids a flash). -->
+<script>
+  (function () {
+    var root = document.documentElement;
+    try {
+      root.setAttribute("data-theme", localStorage.getItem("site-theme") || "aurora");
+    } catch (e) { root.setAttribute("data-theme", "aurora"); }
+    try {
+      root.setAttribute("data-lang", localStorage.getItem("site-lang") || "zh");
+    } catch (e) { root.setAttribute("data-lang", "zh"); }
+  })();
+</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../posts/deep-representation-ch2/index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="../../posts/deep-representation-ch2/index.html">
+    <span class="navbar-title">橙橙祎狮子</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">自叙小笺 About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../publications.html"> 
+<span class="menu-text">论文 Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../blog.html"> 
+<span class="menu-text">博客 Blog</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/CaiYitao"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content" id="quarto-document-content">
+<!-- Site-wide animated research background (WebGL / three.js).
+     Motif: AI studying RNA structure — a SINGLE-STRAND RNA folding back on itself into
+     stem-loops, hairpins and a multi-loop junction (tertiary fold — cf.
+     https://rna.bgsu.edu/rna3dhub), alongside a graph-neural-network node cloud (the AI).
+     Colours follow the active theme (data-theme on <html>). Falls back to the CSS gradient
+     if WebGL is unavailable. -->
+<div id="bg-gradient" aria-hidden="true"></div>
+<canvas id="bg-webgl" aria-hidden="true"></canvas>
+
+<script type="module">
+  (function () {
+    const canvas = document.getElementById("bg-webgl");
+    if (!canvas) return;
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function hasWebGL() {
+      try {
+        const c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch (e) { return false; }
+    }
+    if (!hasWebGL()) return;
+
+    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js")
+      .then((THREE) => initScene(THREE))
+      .catch((err) => console.warn("[bg] three.js failed to load; using gradient fallback.", err));
+
+    function cssVar(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function initScene(THREE) {
+      canvas.classList.add("is-active");
+      const V = THREE.Vector3;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x000000, 0.011);
+
+      const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 400);
+      camera.position.set(0, 0, 62);
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas, antialias: true, alpha: true, powerPreference: "low-power",
+      });
+      renderer.setClearColor(0x000000, 0);
+      function resize() {
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+        renderer.setSize(innerWidth, innerHeight, false);
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      addEventListener("resize", resize, { passive: true });
+
+      const world = new THREE.Group();
+      scene.add(world);
+
+      // ---- RNA stem-loop (hairpin): one strand winds up, loops, and pairs back down ----
+      function hairpin(origin, dir, side, nbp, rise, width, twist, loopR) {
+        dir = dir.clone().normalize();
+        side = side.clone().normalize();
+        const binorm = new V().crossVectors(dir, side).normalize();
+        const s1 = [], s2 = [], rungs = [];
+        for (let i = 0; i < nbp; i++) {
+          const axis = origin.clone().add(dir.clone().multiplyScalar(i * rise));
+          const th = i * twist; // A-form-like winding
+          const off = side.clone().multiplyScalar(Math.cos(th))
+            .add(binorm.clone().multiplyScalar(Math.sin(th)))
+            .multiplyScalar(width / 2);
+          const a = axis.clone().add(off);
+          const b = axis.clone().sub(off);
+          s1.push(a); s2.push(b); rungs.push([a, b]);
+        }
+        const aTop = s1[nbp - 1], bTop = s2[nbp - 1];
+        const loop = [], steps = 7;
+        for (let k = 1; k < steps; k++) {
+          const t = k / steps;
+          const p = aTop.clone().lerp(bTop, t);
+          p.add(dir.clone().multiplyScalar(Math.sin(t * Math.PI) * loopR));
+          loop.push(p);
+        }
+        const backbone = s1.concat(loop, s2.slice().reverse());
+        return { backbone, rungs, entry: s1[0], exit: s2[0] };
+      }
+
+      // cloverleaf-like fold: hairpins radiating from a central junction, lifted to 3D
+      const hps = [];
+      const center = new V(0, -7, 0);
+      [
+        { ang: 90,  tilt:  0.22, n: 8 },
+        { ang: 205, tilt: -0.28, n: 7 },
+        { ang: 330, tilt:  0.16, n: 7 },
+      ].forEach((a) => {
+        const rad = a.ang * Math.PI / 180;
+        const dir = new V(Math.cos(rad), 0.95, Math.sin(rad)).normalize();
+        dir.applyAxisAngle(new V(Math.cos(rad + Math.PI / 2), 0, Math.sin(rad + Math.PI / 2)), a.tilt);
+        const side = new V(0, 1, 0).cross(dir).normalize();
+        const origin = center.clone().add(dir.clone().multiplyScalar(6));
+        hps.push(hairpin(origin, dir, side, a.n, 1.35, 3.2, 0.55, 2.0));
+      });
+      hps.push(hairpin(center.clone().add(new V(0, -2, 0)), new V(0, -1, 0.06), new V(1, 0, 0), 6, 1.35, 3.2, 0.55, 1.8));
+
+      const linkers = [];
+      for (let i = 0; i < hps.length; i++) {
+        const a = hps[i].exit, b = hps[(i + 1) % hps.length].entry;
+        const mid = a.clone().lerp(b, 0.5);
+        mid.add(center.clone().sub(mid).multiplyScalar(0.45));
+        linkers.push(a, mid, mid, b);
+      }
+
+      const backbonePts = [], rungPts = [], nucPts = [];
+      hps.forEach((h) => {
+        for (let i = 0; i < h.backbone.length - 1; i++) backbonePts.push(h.backbone[i], h.backbone[i + 1]);
+        h.rungs.forEach((r) => rungPts.push(r[0], r[1]));
+        h.backbone.forEach((p) => nucPts.push(p));
+      });
+      for (let i = 0; i < linkers.length; i += 2) backbonePts.push(linkers[i], linkers[i + 1]);
+
+      function segGeo(arr) {
+        const g = new THREE.BufferGeometry(), f = [];
+        arr.forEach((v) => f.push(v.x, v.y, v.z));
+        g.setAttribute("position", new THREE.Float32BufferAttribute(f, 3));
+        return g;
+      }
+
+      const mats = {
+        backbone: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.62 }),
+        rung:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.30 }),
+        nuc:      new THREE.PointsMaterial({ size: 0.5, transparent: true, opacity: 0.55, sizeAttenuation: true }),
+        node:     new THREE.PointsMaterial({ size: 0.72, transparent: true, opacity: 0.72, sizeAttenuation: true }),
+        edge:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16 }),
+      };
+
+      const rna = new THREE.Group();
+      rna.add(new THREE.LineSegments(segGeo(backbonePts), mats.backbone));
+      rna.add(new THREE.LineSegments(segGeo(rungPts), mats.rung));
+      rna.add(new THREE.Points(segGeo(nucPts), mats.nuc));
+      rna.position.x = -9;
+      world.add(rna);
+
+      // ---- graph neural network cloud (the AI studying the structure) ----
+      const nodeVecs = [], NODES = 60;
+      for (let i = 0; i < NODES; i++) {
+        nodeVecs.push(new V((Math.random() - 0.5) * 32 + 22, (Math.random() - 0.5) * 42, (Math.random() - 0.5) * 28));
+      }
+      const edgePts = [], LINK = 12;
+      for (let i = 0; i < NODES; i++)
+        for (let j = i + 1; j < NODES; j++)
+          if (nodeVecs[i].distanceTo(nodeVecs[j]) < LINK) edgePts.push(nodeVecs[i], nodeVecs[j]);
+      const gnn = new THREE.Group();
+      gnn.add(new THREE.Points(segGeo(nodeVecs), mats.node));
+      gnn.add(new THREE.LineSegments(segGeo(edgePts), mats.edge));
+      world.add(gnn);
+
+      world.rotation.x = 0.16;
+
+      // ---- theme-driven colours ----
+      function applyTheme() {
+        mats.backbone.color.set(cssVar("--bg-helix", "#2563eb"));
+        mats.rung.color.set(cssVar("--bg-rung", "#14b8a6"));
+        mats.nuc.color.set(cssVar("--bg-helix2", "#0d9488"));
+        mats.node.color.set(cssVar("--bg-node", "#6366f1"));
+        mats.edge.color.set(cssVar("--bg-edge", "#94a3b8"));
+        scene.fog.color.set(cssVar("--bg-fog", "#f7f8fb"));
+      }
+      applyTheme();
+      addEventListener("themechange", applyTheme);
+
+      // ---- mouse parallax ----
+      const target = { x: 0, y: 0 };
+      addEventListener("pointermove", (e) => {
+        target.x = (e.clientX / innerWidth - 0.5) * 0.5;
+        target.y = (e.clientY / innerHeight - 0.5) * 0.5;
+      }, { passive: true });
+
+      let running = true;
+      document.addEventListener("visibilitychange", () => {
+        running = !document.hidden;
+        if (running && !reduceMotion) loop();
+      });
+
+      const clock = new THREE.Clock();
+      function frame() {
+        const t = clock.getElapsedTime();
+        rna.rotation.y = t * 0.07;
+        gnn.rotation.y = -t * 0.04;
+        gnn.rotation.x = Math.sin(t * 0.1) * 0.05;
+        world.rotation.x += (0.16 + target.y - world.rotation.x) * 0.02;
+        camera.position.x += (target.x * 9 - camera.position.x) * 0.03;
+        camera.position.y += (-target.y * 9 - camera.position.y) * 0.03;
+        camera.lookAt(0, -2, 0);
+        renderer.render(scene, camera);
+      }
+      function loop() {
+        if (!running || reduceMotion) return;
+        frame();
+        requestAnimationFrame(loop);
+      }
+      reduceMotion ? frame() : loop();
+    }
+  })();
+</script>
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">深度表示学习 · 第2章：线性与独立结构</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">AI</div>
+    <div class="quarto-category">Representation Learning</div>
+    <div class="quarto-category">Interactive</div>
+    <div class="quarto-category">Deep Learning</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    以 Pluto + Makie 打造的可玩笔记本，互动游戏化解读 Ma 实验室《Deep Representation Learning》第 2 章——PCA、ICA、稀疏编码与字典学习。A Pluto + Makie interactive lesson on linear &amp; independent structure: PCA, ICA, sparse coding and dictionary learning.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>蔡祎涛 Cai Yitao </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 30, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>线性与独立结构是表示学习的地基：从 <strong>PCA</strong> 找主轴，到 <strong>ICA</strong> 拆出独立成分，再到 <strong>稀疏编码 / 字典学习</strong> 学到过完备而可解释的基。本篇把 Ma 实验室《Deep Representation Learning》第 2 章做成一个<strong>可玩的 Pluto + Makie 笔记本</strong>——拖动参数，图形即时回应。</p>
+<blockquote class="blockquote">
+<p>Linear and independent structure is the bedrock of representation learning — from <strong>PCA</strong> to <strong>ICA</strong> to <strong>sparse coding / dictionary learning</strong>. This is Chapter 2 of Ma Lab’s <em>Deep Representation Learning</em>, rebuilt as a playable Pluto + Makie notebook where every figure responds to your input.</p>
+</blockquote>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>该笔记本体积较大、运行时会在浏览器中执行交互逻辑，首次加载请稍候片刻。This notebook is large and runs interactively in your browser — please allow a moment to load.</p>
+</div>
+</div>
+<div class="demo-frame-wrap">
+  <div class="demo-frame-bar">
+    <span class="dots"><i></i><i></i><i></i></span>
+    <span>deep-representation-learning · ch.2 · pluto + makie</span>
+    <span class="spacer"></span>
+    <a href="chap2.html" target="_blank" rel="noopener">在新标签打开 ↗</a>
+  </div>
+  <iframe class="demo-frame" src="chap2.html" title="Deep Representation Learning Chapter 2 — interactive Pluto notebook" loading="lazy"></iframe>
+</div>
+
+
+
+</main> <!-- /main -->
+<!-- Floating background-theme switcher. Persists choice and notifies the WebGL background. -->
+<div id="theme-switch" role="group" aria-label="背景主题 Background theme">
+  <span class="ts-label">主题</span>
+  <button class="ts-swatch ts-aurora" data-theme-value="aurora" title="渐变白 · Aurora" aria-label="渐变白 Aurora"></button>
+  <button class="ts-swatch ts-ember" data-theme-value="ember" title="橙黑 · Ember" aria-label="橙黑 Ember"></button>
+  <button class="ts-swatch ts-onyx" data-theme-value="onyx" title="渐变黑 · Onyx" aria-label="渐变黑 Onyx"></button>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var box = document.getElementById("theme-switch");
+    if (!box) return;
+    var buttons = box.querySelectorAll(".ts-swatch");
+
+    function mark(theme) {
+      buttons.forEach(function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-theme-value") === theme);
+      });
+    }
+
+    function setTheme(theme) {
+      root.setAttribute("data-theme", theme);
+      try { localStorage.setItem("site-theme", theme); } catch (e) {}
+      mark(theme);
+      // notify the WebGL background to re-read its colours
+      window.dispatchEvent(new CustomEvent("themechange", { detail: { theme: theme } }));
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-value")); });
+    });
+
+    mark(root.getAttribute("data-theme") || "aurora");
+
+    // ---- language toggle (used on bilingual posts via .lang-toggle [data-lang-value]) ----
+    function markLang(lang) {
+      document.querySelectorAll(".lang-toggle [data-lang-value]").forEach(function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-lang-value") === lang);
+      });
+    }
+    function setLang(lang) {
+      root.setAttribute("data-lang", lang);
+      try { localStorage.setItem("site-lang", lang); } catch (e) {}
+      markLang(lang);
+    }
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest && e.target.closest(".lang-toggle [data-lang-value]");
+      if (btn) setLang(btn.getAttribute("data-lang-value"));
+    });
+    markLang(root.getAttribute("data-lang") || "zh");
+  })();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/caiyitao\.github\.io");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>© 2026 蔡祎涛 Cai Yitao · Built with Quarto · ObservableJS · WebGL</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+<script src="../../site_libs/quarto-html/zenscroll-min.js"></script>
+</body></html>

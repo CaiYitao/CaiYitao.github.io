@@ -1,1 +1,374 @@
-/* css styles */
+/* =========================================================================
+   橙橙祎狮子 · Cai Yitao — personal site
+   Aesthetic: transformer-circuits / Distill — calm, scholarly, serif body +
+   sans headings, narrow reading column, over a subtle WebGL research background
+   (single-strand RNA fold + GNN cloud). Three switchable colour themes.
+   ========================================================================= */
+
+:root {
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino,
+                "Source Han Serif SC", "Noto Serif SC", "Songti SC",
+                Georgia, "Times New Roman", serif;
+  --font-sans:  system-ui, -apple-system, "Segoe UI", "PingFang SC",
+                "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --font-mono:  "SF Mono", "JetBrains Mono", "Fira Code", ui-monospace,
+                Menlo, Consolas, monospace;
+}
+
+/* ---------- THEME: Aurora (gradient white, default, light) ---------- */
+:root,
+:root[data-theme="aurora"] {
+  --ink: #1a1d23;  --ink-soft: #3b4250;  --muted: #6b7280;
+  --accent: #2563eb;  --accent-2: #7c3aed;  --accent-3: #0d9488;
+  --rule: rgba(20, 30, 60, 0.10);
+  --surface: rgba(255, 255, 255, 0.74);
+  --surface-2: rgba(255, 255, 255, 0.86);
+  --navbar-bg: rgba(248, 250, 253, 0.72);
+  --code-bg: rgba(20, 30, 60, 0.06);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 40px rgba(16, 24, 40, 0.07);
+  --page-grad:
+    radial-gradient(60% 55% at 18% 12%, rgba(37, 99, 235, 0.10), transparent 60%),
+    radial-gradient(55% 50% at 85% 20%, rgba(124, 58, 237, 0.10), transparent 60%),
+    radial-gradient(70% 60% at 70% 95%, rgba(13, 148, 136, 0.08), transparent 60%),
+    linear-gradient(170deg, #f8fafc 0%, #eef2f9 55%, #f3f0fb 100%);
+  --canvas-opacity: 0.52;
+  /* WebGL colours */
+  --bg-helix: #2563eb;  --bg-helix2: #0d9488;  --bg-rung: #14b8a6;
+  --bg-node: #6366f1;   --bg-edge: #94a3b8;     --bg-fog: #f7f8fb;
+  color-scheme: light;
+}
+
+/* ---------- THEME: Ember (orange-red + black, dark) ---------- */
+:root[data-theme="ember"] {
+  --ink: #f6ede6;  --ink-soft: #ddccc0;  --muted: #a18a7d;
+  --accent: #ff5a1f;  --accent-2: #f97316;  --accent-3: #ffb454;
+  --rule: rgba(255, 120, 60, 0.18);
+  --surface: rgba(24, 18, 16, 0.62);
+  --surface-2: rgba(30, 22, 19, 0.72);
+  --navbar-bg: rgba(14, 11, 10, 0.74);
+  --code-bg: rgba(255, 140, 80, 0.12);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 44px rgba(0, 0, 0, 0.55);
+  --page-grad:
+    radial-gradient(55% 50% at 20% 12%, rgba(255, 90, 31, 0.18), transparent 60%),
+    radial-gradient(50% 50% at 85% 25%, rgba(249, 115, 22, 0.12), transparent 60%),
+    radial-gradient(60% 55% at 72% 96%, rgba(120, 40, 10, 0.22), transparent 62%),
+    linear-gradient(170deg, #0b0a0a 0%, #14100e 55%, #1b110b 100%);
+  --canvas-opacity: 0.6;
+  --bg-helix: #ff5a1f;  --bg-helix2: #f97316;  --bg-rung: #ffb454;
+  --bg-node: #ff7a45;   --bg-edge: #7a4a38;     --bg-fog: #0b0a0a;
+  color-scheme: dark;
+}
+
+/* ---------- THEME: Onyx (gradient black, dark, cool) ---------- */
+:root[data-theme="onyx"] {
+  --ink: #e7ecf5;  --ink-soft: #c2cad8;  --muted: #8a93a6;
+  --accent: #6ea8fe;  --accent-2: #a78bfa;  --accent-3: #22d3ee;
+  --rule: rgba(150, 170, 220, 0.14);
+  --surface: rgba(16, 18, 26, 0.60);
+  --surface-2: rgba(20, 24, 34, 0.72);
+  --navbar-bg: rgba(10, 12, 18, 0.74);
+  --code-bg: rgba(140, 160, 220, 0.12);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.45), 0 14px 44px rgba(0, 0, 0, 0.6);
+  --page-grad:
+    radial-gradient(55% 50% at 18% 12%, rgba(110, 168, 254, 0.14), transparent 60%),
+    radial-gradient(50% 50% at 85% 22%, rgba(167, 139, 250, 0.14), transparent 60%),
+    radial-gradient(65% 55% at 72% 96%, rgba(34, 211, 238, 0.10), transparent 62%),
+    linear-gradient(170deg, #0a0c12 0%, #0e1018 55%, #0c1018 100%);
+  --canvas-opacity: 0.58;
+  --bg-helix: #6ea8fe;  --bg-helix2: #22d3ee;  --bg-rung: #a78bfa;
+  --bg-node: #818cf8;   --bg-edge: #3b4a6b;     --bg-fog: #0a0c12;
+  color-scheme: dark;
+}
+
+/* -------------------------------------------------------------------------
+   Background layers
+   ------------------------------------------------------------------------- */
+html { background: var(--page-grad) fixed; }
+
+#bg-gradient {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: var(--page-grad);
+}
+#bg-webgl {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  z-index: -1; pointer-events: none;
+  opacity: 0; transition: opacity 1.2s ease;
+}
+#bg-webgl.is-active { opacity: var(--canvas-opacity); }
+
+body {
+  background: transparent !important;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.075rem;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  transition: color 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* generic text colour hooks so dark themes read correctly */
+p, li, dd, dt, td, th, .quarto-listing, figcaption { color: var(--ink); }
+.text-muted, .quarto-post .listing-date, .quarto-post .metadata { color: var(--muted) !important; }
+
+/* -------------------------------------------------------------------------
+   Navbar
+   ------------------------------------------------------------------------- */
+.navbar {
+  background: var(--navbar-bg) !important;
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid var(--rule);
+  box-shadow: none;
+}
+.navbar .navbar-brand, .navbar .navbar-title {
+  font-family: var(--font-sans); font-weight: 700;
+  letter-spacing: -0.01em; color: var(--ink) !important;
+}
+.navbar .nav-link {
+  font-family: var(--font-sans); font-size: 0.95rem;
+  color: var(--ink-soft) !important; position: relative;
+  transition: color 0.18s ease;
+}
+.navbar .nav-link:hover, .navbar .nav-link.active { color: var(--accent) !important; }
+.navbar .nav-link::after {
+  content: ""; position: absolute; left: 0.5rem; right: 0.5rem; bottom: 0.25rem;
+  height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transform: scaleX(0); transform-origin: left; transition: transform 0.22s ease;
+}
+.navbar .nav-link:hover::after, .navbar .nav-link.active::after { transform: scaleX(1); }
+.navbar .navbar-toggler, .navbar .quarto-navbar-tools a { color: var(--ink) !important; border-color: var(--rule); }
+
+/* -------------------------------------------------------------------------
+   Reading surface — frosted "paper" so text stays crisp over the background
+   ------------------------------------------------------------------------- */
+main.content, #quarto-document-content {
+  background: var(--surface);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--rule); border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(1.1rem, 4vw, 3.25rem);
+  margin-top: 1.75rem; margin-bottom: 2.5rem;
+  transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6, .navbar, .nav-link, .btn, .quarto-title-block .title { font-family: var(--font-sans); }
+h1, h2, h3, h4 { color: var(--ink); letter-spacing: -0.015em; line-height: 1.25; }
+h1 { font-weight: 800; }
+h2 { font-weight: 700; margin-top: 2.25rem; }
+h3 { font-weight: 700; }
+
+#title-block-header .quarto-title .title {
+  font-size: clamp(1.9rem, 4.5vw, 2.7rem); font-weight: 800; letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--ink) 28%, var(--accent) 72%, var(--accent-2));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.quarto-title-block .description, #title-block-header .subtitle {
+  font-family: var(--font-sans); color: var(--muted); font-size: 1.05rem;
+}
+.quarto-title .quarto-categories .quarto-category {
+  font-family: var(--font-sans); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--accent); border-radius: 999px; padding: 0.2rem 0.7rem; opacity: 1;
+}
+
+a { text-decoration-thickness: 1px; text-underline-offset: 2px; color: var(--accent); }
+a:hover { color: var(--accent-2); text-decoration-color: var(--accent-2); }
+#quarto-document-content p a, #quarto-document-content li a {
+  color: var(--accent); text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: color 0.18s ease, text-decoration-color 0.18s ease;
+}
+#quarto-document-content p a:hover, #quarto-document-content li a:hover {
+  color: var(--accent-2); text-decoration-color: var(--accent-2);
+}
+
+p { margin-bottom: 1.15rem; }
+
+blockquote, .blockquote {
+  border-left: 3px solid var(--accent); color: var(--ink-soft);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-radius: 0 8px 8px 0; padding: 0.6rem 1.1rem;
+}
+
+code:not(.sourceCode) {
+  font-family: var(--font-mono); font-size: 0.88em;
+  background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 5px; color: var(--ink);
+}
+div.sourceCode { border: 1px solid var(--rule); border-radius: 10px; }
+
+/* callouts adapt to theme surface */
+.callout { border-radius: 12px; }
+.callout, .callout-body, .callout .callout-body-container { color: var(--ink); }
+
+/* TOC */
+#TOC, nav[role="doc-toc"] { font-family: var(--font-sans); font-size: 0.86rem; }
+#TOC .nav-link, nav[role="doc-toc"] .nav-link { color: var(--muted); border-left: 2px solid transparent; }
+#TOC .nav-link.active, nav[role="doc-toc"] .nav-link.active { color: var(--accent); border-left-color: var(--accent); }
+
+/* -------------------------------------------------------------------------
+   Listing (home + blog)
+   ------------------------------------------------------------------------- */
+.quarto-listing { margin-top: 2rem; }
+.quarto-post {
+  border: 1px solid var(--rule); border-radius: 14px; background: var(--surface-2);
+  padding: 1.1rem 1.25rem; margin-bottom: 1rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.quarto-post:hover {
+  transform: translateY(-2px); box-shadow: var(--shadow);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.quarto-post .listing-title { font-family: var(--font-sans); font-weight: 700; font-size: 1.18rem; letter-spacing: -0.01em; color: var(--ink); }
+.quarto-post .listing-description { color: var(--ink-soft); }
+.quarto-post .thumbnail img, .quarto-post .thumbnail-image { border-radius: 10px; border: 1px solid var(--rule); }
+.listing-category, .quarto-listing-category .category { font-family: var(--font-sans); font-size: 0.8rem; color: var(--muted); }
+
+/* -------------------------------------------------------------------------
+   Embedded-demo posts — iframe with a tidy toolbar
+   ------------------------------------------------------------------------- */
+.demo-frame-wrap {
+  margin: 1.5rem 0 0.5rem; border: 1px solid var(--rule); border-radius: 14px;
+  overflow: hidden; box-shadow: var(--shadow); background: #fff;
+}
+.demo-frame-bar {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.9rem;
+  background: var(--surface-2); border-bottom: 1px solid var(--rule);
+  font-family: var(--font-sans); font-size: 0.85rem; color: var(--muted);
+}
+.demo-frame-bar .dots { display: inline-flex; gap: 0.4rem; }
+.demo-frame-bar .dots i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+.demo-frame-bar .dots i:nth-child(1) { background: #f87171; }
+.demo-frame-bar .dots i:nth-child(2) { background: #fbbf24; }
+.demo-frame-bar .dots i:nth-child(3) { background: #34d399; }
+.demo-frame-bar .spacer { flex: 1; }
+.demo-frame-bar a { font-weight: 600; color: var(--accent); text-decoration: none; }
+.demo-frame-bar a:hover { color: var(--accent-2); }
+.demo-frame { display: block; width: 100%; height: 82vh; min-height: 560px; border: 0; background: #fff; }
+
+/* -------------------------------------------------------------------------
+   Publications
+   ------------------------------------------------------------------------- */
+.pub-list { list-style: none; padding: 0; margin: 1.5rem 0; }
+.pub {
+  border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 12px;
+  background: var(--surface-2); padding: 1.3rem 1.5rem; margin-bottom: 1.4rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.pub:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.pub.featured { border-left-color: var(--accent-2); }
+.pub .pub-badge {
+  display: inline-block; font-family: var(--font-sans); font-size: 0.7rem;
+  letter-spacing: 0.06em; text-transform: uppercase; color: #fff;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  border-radius: 999px; padding: 0.18rem 0.7rem; margin-bottom: 0.6rem;
+}
+.pub .pub-title { font-family: var(--font-sans); font-weight: 700; font-size: 1.2rem; line-height: 1.35; letter-spacing: -0.01em; margin: 0.1rem 0 0.4rem; color: var(--ink); }
+.pub .pub-authors { color: var(--ink-soft); margin-bottom: 0.2rem; }
+.pub .pub-authors .me { font-weight: 700; color: var(--ink); }
+.pub .pub-venue { font-family: var(--font-sans); font-size: 0.9rem; color: var(--muted); }
+.pub .pub-abstract { color: var(--ink-soft); font-size: 0.98rem; margin: 0.7rem 0 0.9rem; }
+.pub .pub-links { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+.pub .pub-links a {
+  font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600; text-decoration: none;
+  color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 8px; padding: 0.3rem 0.75rem;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.pub .pub-links a:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pub .pub-links a[aria-disabled="true"] { color: var(--muted); border-color: var(--rule); cursor: default; pointer-events: none; }
+
+/* -------------------------------------------------------------------------
+   Theme switcher (floating, bottom-right)
+   ------------------------------------------------------------------------- */
+#theme-switch {
+  position: fixed; right: 1rem; bottom: 1rem; z-index: 50;
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.45rem 0.7rem; border-radius: 999px;
+  background: var(--navbar-bg); border: 1px solid var(--rule);
+  box-shadow: var(--shadow);
+  backdrop-filter: saturate(160%) blur(12px); -webkit-backdrop-filter: saturate(160%) blur(12px);
+}
+#theme-switch .ts-label { font-family: var(--font-sans); font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+.ts-swatch {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; padding: 0; outline: none; transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.ts-swatch:hover { transform: scale(1.15); }
+.ts-swatch.is-active { border-color: var(--ink); transform: scale(1.12); }
+.ts-aurora { background: linear-gradient(135deg, #eef2f9 35%, #2563eb 75%, #7c3aed); }
+.ts-ember  { background: linear-gradient(135deg, #14100e 30%, #ff5a1f 75%, #ffb454); }
+.ts-onyx   { background: linear-gradient(135deg, #0a0c12 30%, #6ea8fe 72%, #a78bfa); }
+
+/* -------------------------------------------------------------------------
+   Footer + responsive
+   ------------------------------------------------------------------------- */
+.nav-footer { background: transparent; border-top: 1px solid var(--rule); font-family: var(--font-sans); font-size: 0.85rem; color: var(--muted); }
+.nav-footer a { color: var(--accent); }
+
+/* -------------------------------------------------------------------------
+   Bilingual (中 / EN) — toggle + show/hide
+   ------------------------------------------------------------------------- */
+:root[data-lang="en"] .i18n-zh { display: none !important; }
+:root[data-lang="zh"] .i18n-en { display: none !important; }
+
+.lang-toggle {
+  display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--rule);
+  font-family: var(--font-sans); margin: 0 0 1.25rem;
+}
+.lang-toggle button {
+  border: 0; background: transparent; cursor: pointer; color: var(--muted);
+  font-size: 0.82rem; font-weight: 600; padding: 0.28rem 0.85rem; border-radius: 999px;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.lang-toggle button.is-active {
+  background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff;
+}
+.post-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+
+/* -------------------------------------------------------------------------
+   Interactive research demos (Sc-GRIP graph · InsightDerm MIL grid)
+   ------------------------------------------------------------------------- */
+.demo-card {
+  border: 1px solid var(--rule); border-radius: 14px; background: var(--surface-2);
+  box-shadow: var(--shadow); padding: 1.1rem 1.25rem; margin: 1.5rem 0;
+}
+.demo-card h4 { margin: 0 0 0.25rem; font-size: 1.02rem; }
+.demo-card .demo-sub { font-family: var(--font-sans); font-size: 0.85rem; color: var(--muted); margin-bottom: 0.9rem; }
+.demo-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; margin-top: 0.9rem; font-family: var(--font-sans); font-size: 0.85rem; color: var(--ink-soft); }
+.demo-btn {
+  font-family: var(--font-sans); font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  color: var(--accent); background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 8px; padding: 0.32rem 0.8rem; transition: background 0.18s ease, color 0.18s ease;
+}
+.demo-btn:hover { background: var(--accent); color: #fff; }
+.demo-controls input[type="range"] { accent-color: var(--accent); vertical-align: middle; }
+.demo-legend { display: inline-flex; align-items: center; gap: 0.35rem; }
+.demo-legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* Sc-GRIP signed-graph svg */
+.scgrip-svg { width: 100%; height: auto; display: block; }
+.scgrip-svg .gene { cursor: pointer; }
+.scgrip-svg text { font-family: var(--font-sans); fill: var(--ink); }
+
+/* InsightDerm WSI patch grid */
+.wsi-grid { display: grid; gap: 3px; margin: 0.5rem 0; }
+.wsi-grid .tile { width: 100%; aspect-ratio: 1 / 1; border-radius: 3px; background: color-mix(in srgb, var(--ink) 12%, transparent); transition: background 0.25s ease, box-shadow 0.2s ease, outline-color 0.2s ease; outline: 2px solid transparent; }
+.wsi-grid .tile.topk { outline-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent); }
+.score-bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 12%, transparent); overflow: hidden; margin-top: 0.3rem; }
+.score-bar > span { display: block; height: 100%; background: linear-gradient(90deg, #10b981, #f59e0b 55%, #ef4444); width: 0%; transition: width 0.3s ease; }
+
+@media (max-width: 640px) {
+  main.content, #quarto-document-content { backdrop-filter: none; }
+  .demo-frame { height: 72vh; }
+  #theme-switch { right: 0.6rem; bottom: 0.6rem; }
+  #theme-switch .ts-label { display: none; }
+}
