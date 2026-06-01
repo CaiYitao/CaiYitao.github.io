@@ -89,12 +89,7 @@ html { background: var(--page-grad) fixed; }
   position: fixed; inset: 0; z-index: -2; pointer-events: none;
   background: var(--page-grad);
 }
-#bg-webgl {
-  position: fixed; inset: 0; width: 100%; height: 100%;
-  z-index: -1; pointer-events: none;
-  opacity: 0; transition: opacity 1.2s ease;
-}
-#bg-webgl.is-active { opacity: var(--canvas-opacity); }
+/* #bg-scene (the animated SVG) is positioned & themed in _background.html */
 
 body {
   background: transparent !important;
@@ -332,6 +327,11 @@ div.sourceCode { border: 1px solid var(--rule); border-radius: 10px; }
   background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff;
 }
 .post-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+
+/* landing hero */
+.lead { font-size: 1.22rem; line-height: 1.6; color: var(--ink-soft); margin-bottom: 0.6rem; }
+.portals { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 1.1rem 0 0.4rem; }
+.portals .demo-btn { font-size: 0.9rem; padding: 0.45rem 1rem; }
 
 /* -------------------------------------------------------------------------
    Interactive research demos (Sc-GRIP graph · InsightDerm MIL grid)

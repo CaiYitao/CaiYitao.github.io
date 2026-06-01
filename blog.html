@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>我的博客 Blog – 橙橙祎狮子</title>
+<title>随笔 · Notes – 橙橙祎狮子</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -166,16 +166,16 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./index.html"> 
+    <a class="nav-link" href="./about.html"> 
 <span class="menu-text">自叙小笺 About</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link" href="./publications.html"> 
-<span class="menu-text">论文 Publications</span></a>
+<span class="menu-text">学术成果 Publications</span></a>
   </li>  
   <li class="nav-item">
     <a class="nav-link active" href="./blog.html" aria-current="page"> 
-<span class="menu-text">博客 Blog</span></a>
+<span class="menu-text">随笔 Notes</span></a>
   </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
@@ -195,7 +195,7 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-page-left">
-      <h1 class="title">我的博客 Blog</h1>
+      <h1 class="title">随笔 · Notes</h1>
                       </div>
   </div>
     
@@ -216,209 +216,211 @@ window.Quarto = {
     <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(4)</span></div><div class="category" data-category="QUk=">AI <span class="quarto-category-count">(3)</span></div><div class="category" data-category="QWxnb3JpdGht">Algorithm <span class="quarto-category-count">(1)</span></div><div class="category" data-category="QXR0ZW50aW9u">Attention <span class="quarto-category-count">(1)</span></div><div class="category" data-category="QmlvaW5mb3JtYXRpY3M=">Bioinformatics <span class="quarto-category-count">(2)</span></div><div class="category" data-category="RGVlcCUyMExlYXJuaW5n">Deep Learning <span class="quarto-category-count">(2)</span></div><div class="category" data-category="R3JhcGglMjBMZWFybmluZw==">Graph Learning <span class="quarto-category-count">(1)</span></div><div class="category" data-category="SW50ZXJhY3RpdmU=">Interactive <span class="quarto-category-count">(4)</span></div><div class="category" data-category="TWVkaWNhbCUyMEltYWdpbmc=">Medical Imaging <span class="quarto-category-count">(1)</span></div><div class="category" data-category="UmVwcmVzZW50YXRpb24lMjBMZWFybmluZw==">Representation Learning <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Uk5B">RNA <span class="quarto-category-count">(1)</span></div><div class="category" data-category="U2luZ2xlLWNlbGw=">Single-cell <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
-<!-- Site-wide animated research background (WebGL / three.js).
-     Motif: AI studying RNA structure — a SINGLE-STRAND RNA folding back on itself into
-     stem-loops, hairpins and a multi-loop junction (tertiary fold — cf.
-     https://rna.bgsu.edu/rna3dhub), alongside a graph-neural-network node cloud (the AI).
-     Colours follow the active theme (data-theme on <html>). Falls back to the CSS gradient
-     if WebGL is unavailable. -->
+<!-- Site-wide animated background (pure SVG + CSS, theme-aware).
+     Motif: AI studying RNA inside a living cell — a cell membrane + organelles holding a
+     folded RNA (secondary structure) on the left, a multi-layer neural network (the AI —
+     broader than a GNN) on the right, and signal pathways bridging cell → network.
+     Colours follow the active theme via CSS variables. No external dependencies. -->
 <div id="bg-gradient" aria-hidden="true"></div>
-<canvas id="bg-webgl" aria-hidden="true"></canvas>
+<div id="bg-scene" aria-hidden="true">
+  <svg viewbox="0 0 160 90" preserveaspectratio="xMidYMid slice" id="bg-svg">
+    <defs>
+      <radialgradient id="cellGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="var(--bg-helix2)" stop-opacity="0.10"></stop>
+        <stop offset="100%" stop-color="var(--bg-helix2)" stop-opacity="0"></stop>
+      </radialgradient>
+      <lineargradient id="bridgeGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="var(--bg-helix2)"></stop>
+        <stop offset="1" stop-color="var(--bg-node)"></stop>
+      </lineargradient>
+    </defs>
 
-<script type="module">
+    <!-- ===== the cell (left) ===== -->
+    <g class="cell">
+      <circle class="cell-glow" cx="40" cy="46" r="33" fill="url(#cellGlow)"></circle>
+      <circle class="cell-mem" cx="40" cy="46" r="31"></circle>
+      <circle class="cell-mem2" cx="40" cy="46" r="29"></circle>
+      <circle class="nucleus" cx="36" cy="44" r="12"></circle>
+      <circle class="nucleolus" cx="38" cy="46" r="3.6"></circle>
+      <!-- mitochondria -->
+      <ellipse class="mito" cx="56" cy="30" rx="4.4" ry="2.0" transform="rotate(26 56 30)"></ellipse>
+      <ellipse class="mito" cx="22" cy="62" rx="4.0" ry="1.9" transform="rotate(-22 22 62)"></ellipse>
+      <ellipse class="mito" cx="54" cy="60" rx="3.6" ry="1.7" transform="rotate(48 54 60)"></ellipse>
+      <!-- vesicles -->
+      <circle class="org" cx="24" cy="28" r="2.0"></circle>
+      <circle class="org" cx="56" cy="46" r="1.8"></circle>
+      <circle class="org" cx="46" cy="64" r="1.5"></circle>
+      <circle class="org" cx="16" cy="46" r="1.4"></circle>
+    </g>
+
+    <!-- groups populated by JS: RNA fold, neural net, signal bridge, molecules -->
+    <g class="rna"></g>
+    <g class="bridge"></g>
+    <g class="net"></g>
+    <g class="mols"></g>
+  </svg>
+</div>
+
+<style>
+  #bg-scene {
+    position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    opacity: 0; transition: opacity 1s ease;
+  }
+  #bg-scene.ready { opacity: var(--canvas-opacity); }
+  #bg-svg { width: 100%; height: 100%; display: block; }
+
+  /* cell */
+  #bg-svg .cell-mem  { fill: none; stroke: var(--bg-helix2); stroke-width: 0.22; opacity: 0.45; }
+  #bg-svg .cell-mem2 { fill: none; stroke: var(--bg-helix2); stroke-width: 0.12; opacity: 0.30; }
+  #bg-svg .nucleus   { fill: var(--bg-node); fill-opacity: 0.07; stroke: var(--bg-node); stroke-width: 0.22; opacity: 0.5; }
+  #bg-svg .nucleolus { fill: var(--bg-node); opacity: 0.35; }
+  #bg-svg .mito      { fill: none; stroke: var(--bg-helix2); stroke-width: 0.35; opacity: 0.45; }
+  #bg-svg .org       { fill: var(--bg-rung); opacity: 0.5; }
+
+  /* RNA fold */
+  #bg-svg .rna-bb   { fill: none; stroke: var(--bg-helix); stroke-width: 0.42; stroke-linecap: round; opacity: 0.85; }
+  #bg-svg .rna-rung { stroke: var(--bg-rung); stroke-width: 0.26; opacity: 0.55; }
+  #bg-svg .rna-nuc  { fill: var(--bg-helix2); opacity: 0.7; }
+
+  /* neural network */
+  #bg-svg .net-line { stroke: var(--bg-edge); stroke-width: 0.13; opacity: 0.4; }
+  #bg-svg .net-node { fill: var(--bg-node); }
+  #bg-svg .net-node.io { fill: var(--bg-helix); }
+
+  /* signal bridge */
+  #bg-svg .bridge-path { fill: none; stroke: url(#bridgeGrad); stroke-width: 0.28; stroke-dasharray: 1.4 1.6; opacity: 0.45; }
+  #bg-svg .mol { fill: var(--bg-helix2); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    #bg-svg .net-node { animation: bgPulse 4s ease-in-out infinite; }
+    #bg-svg .bridge-path { animation: bgFlow 3.2s linear infinite; }
+    #bg-svg .mol { animation: bgDrift 6s ease-in-out infinite; }
+  }
+  @keyframes bgPulse { 0%,100% { opacity: 0.85; } 50% { opacity: 0.4; } }
+  @keyframes bgFlow  { to { stroke-dashoffset: -24; } }
+  @keyframes bgDrift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(0.7px,-0.6px); } }
+</style>
+
+<script>
   (function () {
-    const canvas = document.getElementById("bg-webgl");
-    if (!canvas) return;
-
-    const reduceMotion = window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    function hasWebGL() {
-      try {
-        const c = document.createElement("canvas");
-        return !!(window.WebGLRenderingContext &&
-          (c.getContext("webgl") || c.getContext("experimental-webgl")));
-      } catch (e) { return false; }
+    var scene = document.getElementById("bg-scene");
+    var svg = document.getElementById("bg-svg");
+    if (!svg) return;
+    var NS = "http://www.w3.org/2000/svg";
+    function mk(tag, attrs) {
+      var el = document.createElementNS(NS, tag);
+      for (var k in attrs) el.setAttribute(k, attrs[k]);
+      return el;
     }
-    if (!hasWebGL()) return;
+    var rnd = function (a, b) { return a + Math.random() * (b - a); };
 
-    import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js")
-      .then((THREE) => initScene(THREE))
-      .catch((err) => console.warn("[bg] three.js failed to load; using gradient fallback.", err));
-
-    function cssVar(name, fallback) {
-      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      return v || fallback;
+    // ---------- RNA fold: a few stem-loops radiating from a junction (2D secondary structure) ----------
+    var rnaG = svg.querySelector(".rna");
+    function hairpin(cx, cy, angDeg, len, wid, n) {
+      var a = angDeg * Math.PI / 180;
+      var dx = Math.cos(a), dy = Math.sin(a);
+      var px = -dy, py = dx;
+      var A = [], B = [], rungs = [];
+      for (var i = 0; i < n; i++) {
+        var s = (i / (n - 1)) * len;
+        A.push([cx + dx * s + px * wid / 2, cy + dy * s + py * wid / 2]);
+        B.push([cx + dx * s - px * wid / 2, cy + dy * s - py * wid / 2]);
+        if (i > 0 && i < n - 1) rungs.push([A[i], B[i]]);
+      }
+      // hairpin loop (semicircle at the far end)
+      var ex = cx + dx * len, ey = cy + dy * len, r = wid / 2, loop = [];
+      for (var k = 0; k <= 6; k++) {
+        var th = (k / 6) * Math.PI;
+        // rotate from +p to -p around end centre
+        var ang0 = Math.atan2(py, px);
+        var t2 = ang0 - th * Math.sign(dx * py - dy * px || 1);
+        loop.push([ex + Math.cos(t2) * r, ey + Math.sin(t2) * r]);
+      }
+      var pts = A.concat(loop, B.slice().reverse());
+      var d = "M" + pts.map(function (p) { return p[0].toFixed(2) + "," + p[1].toFixed(2); }).join(" L");
+      rnaG.appendChild(mk("path", { class: "rna-bb", d: d }));
+      rungs.forEach(function (rg) {
+        rnaG.appendChild(mk("line", { class: "rna-rung", x1: rg[0][0], y1: rg[0][1], x2: rg[1][0], y2: rg[1][1] }));
+      });
+      pts.forEach(function (p, i) { if (i % 2 === 0) rnaG.appendChild(mk("circle", { class: "rna-nuc", cx: p[0], cy: p[1], r: 0.45 })); });
+      return [ex, ey];
     }
+    var cx0 = 38, cy0 = 47;
+    hairpin(cx0, cy0, 158, 11, 4.0, 6);
+    hairpin(cx0, cy0, 212, 12, 4.2, 7);
+    hairpin(cx0, cy0, 270, 10, 3.8, 6);
+    // central junction node
+    rnaG.appendChild(mk("circle", { class: "rna-nuc", cx: cx0, cy: cy0, r: 0.8 }));
 
-    function initScene(THREE) {
-      canvas.classList.add("is-active");
-      const V = THREE.Vector3;
-
-      const scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x000000, 0.011);
-
-      const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 400);
-      camera.position.set(0, 0, 62);
-
-      const renderer = new THREE.WebGLRenderer({
-        canvas, antialias: true, alpha: true, powerPreference: "low-power",
+    // ---------- neural network (right): a multi-layer perceptron — the AI ----------
+    var netG = svg.querySelector(".net");
+    var layersX = [101, 116, 131, 146];
+    var sizes = [5, 4, 4, 3];
+    var top = 18, bot = 74;
+    var pos = sizes.map(function (s, li) {
+      var arr = [];
+      for (var i = 0; i < s; i++) {
+        var y = s === 1 ? (top + bot) / 2 : top + (i / (s - 1)) * (bot - top);
+        arr.push([layersX[li], y]);
+      }
+      return arr;
+    });
+    // connections
+    for (var l = 0; l < pos.length - 1; l++) {
+      pos[l].forEach(function (a) {
+        pos[l + 1].forEach(function (b) {
+          netG.appendChild(mk("line", { class: "net-line", x1: a[0], y1: a[1], x2: b[0], y2: b[1] }));
+        });
       });
-      renderer.setClearColor(0x000000, 0);
-      function resize() {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-        renderer.setSize(innerWidth, innerHeight, false);
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
-      }
-      resize();
-      addEventListener("resize", resize, { passive: true });
-
-      const world = new THREE.Group();
-      scene.add(world);
-
-      // ---- RNA stem-loop (hairpin): one strand winds up, loops, and pairs back down ----
-      function hairpin(origin, dir, side, nbp, rise, width, twist, loopR) {
-        dir = dir.clone().normalize();
-        side = side.clone().normalize();
-        const binorm = new V().crossVectors(dir, side).normalize();
-        const s1 = [], s2 = [], rungs = [];
-        for (let i = 0; i < nbp; i++) {
-          const axis = origin.clone().add(dir.clone().multiplyScalar(i * rise));
-          const th = i * twist; // A-form-like winding
-          const off = side.clone().multiplyScalar(Math.cos(th))
-            .add(binorm.clone().multiplyScalar(Math.sin(th)))
-            .multiplyScalar(width / 2);
-          const a = axis.clone().add(off);
-          const b = axis.clone().sub(off);
-          s1.push(a); s2.push(b); rungs.push([a, b]);
-        }
-        const aTop = s1[nbp - 1], bTop = s2[nbp - 1];
-        const loop = [], steps = 7;
-        for (let k = 1; k < steps; k++) {
-          const t = k / steps;
-          const p = aTop.clone().lerp(bTop, t);
-          p.add(dir.clone().multiplyScalar(Math.sin(t * Math.PI) * loopR));
-          loop.push(p);
-        }
-        const backbone = s1.concat(loop, s2.slice().reverse());
-        return { backbone, rungs, entry: s1[0], exit: s2[0] };
-      }
-
-      // cloverleaf-like fold: hairpins radiating from a central junction, lifted to 3D
-      const hps = [];
-      const center = new V(0, -7, 0);
-      [
-        { ang: 90,  tilt:  0.22, n: 8 },
-        { ang: 205, tilt: -0.28, n: 7 },
-        { ang: 330, tilt:  0.16, n: 7 },
-      ].forEach((a) => {
-        const rad = a.ang * Math.PI / 180;
-        const dir = new V(Math.cos(rad), 0.95, Math.sin(rad)).normalize();
-        dir.applyAxisAngle(new V(Math.cos(rad + Math.PI / 2), 0, Math.sin(rad + Math.PI / 2)), a.tilt);
-        const side = new V(0, 1, 0).cross(dir).normalize();
-        const origin = center.clone().add(dir.clone().multiplyScalar(6));
-        hps.push(hairpin(origin, dir, side, a.n, 1.35, 3.2, 0.55, 2.0));
+    }
+    // nodes
+    pos.forEach(function (layer, li) {
+      var io = (li === 0 || li === pos.length - 1);
+      layer.forEach(function (p) {
+        var c = mk("circle", { class: "net-node" + (io ? " io" : ""), cx: p[0], cy: p[1], r: io ? 1.05 : 0.95 });
+        c.style.animationDelay = rnd(0, 4).toFixed(2) + "s";
+        netG.appendChild(c);
       });
-      hps.push(hairpin(center.clone().add(new V(0, -2, 0)), new V(0, -1, 0.06), new V(1, 0, 0), 6, 1.35, 3.2, 0.55, 1.8));
+    });
 
-      const linkers = [];
-      for (let i = 0; i < hps.length; i++) {
-        const a = hps[i].exit, b = hps[(i + 1) % hps.length].entry;
-        const mid = a.clone().lerp(b, 0.5);
-        mid.add(center.clone().sub(mid).multiplyScalar(0.45));
-        linkers.push(a, mid, mid, b);
-      }
+    // ---------- signal bridge: cell/RNA → network ----------
+    var brG = svg.querySelector(".bridge");
+    var firstLayer = pos[0];
+    [[58, 38], [60, 47], [58, 56]].forEach(function (src, i) {
+      var dst = firstLayer[Math.min(i + 1, firstLayer.length - 1)];
+      var mxx = (src[0] + dst[0]) / 2;
+      var d = "M" + src[0] + "," + src[1] +
+              " C" + mxx + "," + (src[1] - 6) + " " + mxx + "," + (dst[1] + 6) + " " + dst[0] + "," + dst[1];
+      var p = mk("path", { class: "bridge-path", d: d });
+      p.style.animationDelay = (i * 0.6).toFixed(1) + "s";
+      brG.appendChild(p);
+    });
 
-      const backbonePts = [], rungPts = [], nucPts = [];
-      hps.forEach((h) => {
-        for (let i = 0; i < h.backbone.length - 1; i++) backbonePts.push(h.backbone[i], h.backbone[i + 1]);
-        h.rungs.forEach((r) => rungPts.push(r[0], r[1]));
-        h.backbone.forEach((p) => nucPts.push(p));
-      });
-      for (let i = 0; i < linkers.length; i += 2) backbonePts.push(linkers[i], linkers[i + 1]);
+    // ---------- diffusing molecules in the cell ----------
+    var molG = svg.querySelector(".mols");
+    [[30, 30], [50, 38], [24, 52], [48, 56], [34, 62]].forEach(function (m, i) {
+      var c = mk("circle", { class: "mol", cx: m[0], cy: m[1], r: 0.5 });
+      c.style.animationDelay = (i * 0.8).toFixed(1) + "s";
+      molG.appendChild(c);
+    });
 
-      function segGeo(arr) {
-        const g = new THREE.BufferGeometry(), f = [];
-        arr.forEach((v) => f.push(v.x, v.y, v.z));
-        g.setAttribute("position", new THREE.Float32BufferAttribute(f, 3));
-        return g;
-      }
+    // reveal
+    requestAnimationFrame(function () { scene.classList.add("ready"); });
 
-      const mats = {
-        backbone: new THREE.LineBasicMaterial({ transparent: true, opacity: 0.62 }),
-        rung:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.30 }),
-        nuc:      new THREE.PointsMaterial({ size: 0.5, transparent: true, opacity: 0.55, sizeAttenuation: true }),
-        node:     new THREE.PointsMaterial({ size: 0.72, transparent: true, opacity: 0.72, sizeAttenuation: true }),
-        edge:     new THREE.LineBasicMaterial({ transparent: true, opacity: 0.16 }),
-      };
-
-      const rna = new THREE.Group();
-      rna.add(new THREE.LineSegments(segGeo(backbonePts), mats.backbone));
-      rna.add(new THREE.LineSegments(segGeo(rungPts), mats.rung));
-      rna.add(new THREE.Points(segGeo(nucPts), mats.nuc));
-      rna.position.x = -9;
-      world.add(rna);
-
-      // ---- graph neural network cloud (the AI studying the structure) ----
-      const nodeVecs = [], NODES = 60;
-      for (let i = 0; i < NODES; i++) {
-        nodeVecs.push(new V((Math.random() - 0.5) * 32 + 22, (Math.random() - 0.5) * 42, (Math.random() - 0.5) * 28));
-      }
-      const edgePts = [], LINK = 12;
-      for (let i = 0; i < NODES; i++)
-        for (let j = i + 1; j < NODES; j++)
-          if (nodeVecs[i].distanceTo(nodeVecs[j]) < LINK) edgePts.push(nodeVecs[i], nodeVecs[j]);
-      const gnn = new THREE.Group();
-      gnn.add(new THREE.Points(segGeo(nodeVecs), mats.node));
-      gnn.add(new THREE.LineSegments(segGeo(edgePts), mats.edge));
-      world.add(gnn);
-
-      world.rotation.x = 0.16;
-
-      // ---- theme-driven colours ----
-      function applyTheme() {
-        mats.backbone.color.set(cssVar("--bg-helix", "#2563eb"));
-        mats.rung.color.set(cssVar("--bg-rung", "#14b8a6"));
-        mats.nuc.color.set(cssVar("--bg-helix2", "#0d9488"));
-        mats.node.color.set(cssVar("--bg-node", "#6366f1"));
-        mats.edge.color.set(cssVar("--bg-edge", "#94a3b8"));
-        scene.fog.color.set(cssVar("--bg-fog", "#f7f8fb"));
-      }
-      applyTheme();
-      addEventListener("themechange", applyTheme);
-
-      // ---- mouse parallax ----
-      const target = { x: 0, y: 0 };
-      addEventListener("pointermove", (e) => {
-        target.x = (e.clientX / innerWidth - 0.5) * 0.5;
-        target.y = (e.clientY / innerHeight - 0.5) * 0.5;
+    // subtle parallax
+    if (!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      var tx = 0, ty = 0, cxp = 0, cyp = 0, raf = 0;
+      addEventListener("pointermove", function (e) {
+        tx = (e.clientX / innerWidth - 0.5) * 8;
+        ty = (e.clientY / innerHeight - 0.5) * 6;
+        if (!raf) raf = requestAnimationFrame(step);
       }, { passive: true });
-
-      let running = true;
-      document.addEventListener("visibilitychange", () => {
-        running = !document.hidden;
-        if (running && !reduceMotion) loop();
-      });
-
-      const clock = new THREE.Clock();
-      function frame() {
-        const t = clock.getElapsedTime();
-        rna.rotation.y = t * 0.07;
-        gnn.rotation.y = -t * 0.04;
-        gnn.rotation.x = Math.sin(t * 0.1) * 0.05;
-        world.rotation.x += (0.16 + target.y - world.rotation.x) * 0.02;
-        camera.position.x += (target.x * 9 - camera.position.x) * 0.03;
-        camera.position.y += (-target.y * 9 - camera.position.y) * 0.03;
-        camera.lookAt(0, -2, 0);
-        renderer.render(scene, camera);
+      function step() {
+        cxp += (tx - cxp) * 0.06; cyp += (ty - cyp) * 0.06;
+        svg.style.transform = "translate(" + cxp.toFixed(2) + "px," + cyp.toFixed(2) + "px)";
+        if (Math.abs(tx - cxp) > 0.1 || Math.abs(ty - cyp) > 0.1) { raf = requestAnimationFrame(step); }
+        else raf = 0;
       }
-      function loop() {
-        if (!running || reduceMotion) return;
-        frame();
-        requestAnimationFrame(loop);
-      }
-      reduceMotion ? frame() : loop();
     }
   })();
 </script>
@@ -458,7 +460,7 @@ window.Quarto = {
     </div>
 </div>
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="QUklMkNTaW5nbGUtY2VsbCUyQ0dyYXBoJTIwTGVhcm5pbmclMkNCaW9pbmZvcm1hdGljcyUyQ0ludGVyYWN0aXZl" data-listing-date-sort="1762902000000" data-listing-file-modified-sort="1780176923639" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1590">
+<div class="quarto-post image-right" data-index="0" data-categories="QUklMkNTaW5nbGUtY2VsbCUyQ0dyYXBoJTIwTGVhcm5pbmclMkNCaW9pbmZvcm1hdGljcyUyQ0ludGVyYWN0aXZl" data-listing-date-sort="1762902000000" data-listing-file-modified-sort="1780216049219" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1590">
 <div class="thumbnail"><a href="./posts/2025_icdm_scgrip/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/2025_icdm_scgrip/thumbnail.svg" class="thumbnail-image">
@@ -496,7 +498,7 @@ Carolina E. Atria, 蔡祎涛 Yitao Cai, et al.
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="QUklMkNSZXByZXNlbnRhdGlvbiUyMExlYXJuaW5nJTJDSW50ZXJhY3RpdmUlMkNEZWVwJTIwTGVhcm5pbmc=" data-listing-date-sort="1748556000000" data-listing-file-modified-sort="1780173700768" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="139">
+<div class="quarto-post image-right" data-index="1" data-categories="QUklMkNSZXByZXNlbnRhdGlvbiUyMExlYXJuaW5nJTJDSW50ZXJhY3RpdmUlMkNEZWVwJTIwTGVhcm5pbmc=" data-listing-date-sort="1748556000000" data-listing-file-modified-sort="1780177932312" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="138">
 <div class="thumbnail"><a href="./posts/deep-representation-ch2/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/deep-representation-ch2/thumbnail.svg" class="thumbnail-image">
@@ -518,7 +520,7 @@ Carolina E. Atria, 蔡祎涛 Yitao Cai, et al.
 
 </div>
 <div class="delink listing-description"><a href="./posts/deep-representation-ch2/index.html" class="no-external">
-<p>以 Pluto + Makie 打造的可玩笔记本，互动游戏化解读 Ma 实验室《Deep Representation Learning》第 2 章——PCA、ICA、稀疏编码与字典学习。A Pluto + Makie interactive lesson on linear &amp; independent structure: PCA, ICA, sparse coding and dictionary learning.</p>
+<p>以 Pluto + Makie 打造的可玩笔记本，互动游戏化解读 马毅实验室《Deep Representation Learning》第 2 章——PCA、ICA、稀疏编码与字典学习。A Pluto + Makie interactive lesson on linear &amp; independent structure: PCA, ICA, sparse coding and dictionary learning.</p>
 </a></div>
 </div>
 <div class="metadata">
