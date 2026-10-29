@@ -1,0 +1,12 @@
+Calligraphy glyph source and usage note
+
+Glyphs: 蔡 (Cai), 祎 (Yi), 涛 (Tao)
+Typeface: Aa王羲之兰亭序行书 / AaWXZLTXXS
+Version: 1.000
+Source preview: https://www.fontju.com/font/13340733/
+Rights notice supplied by the distributor: Non-Commercial Use.
+
+These three transparent glyph images are used only as identity marks on
+Cai Yitao's non-commercial personal academic website. No font software is
+redistributed in this project. Commercial use requires permission from the
+relevant rights holder.
