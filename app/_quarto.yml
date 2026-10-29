@@ -1,0 +1,6 @@
+project:
+  type: website
+  output-dir: dist
+
+website:
+  title: "Cai Yitao — RNA Intelligence"

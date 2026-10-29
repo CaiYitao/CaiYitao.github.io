@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nussinov-Jacobson RNA折叠算法 · 互动教程</title>
+    <style>
+        :root {
+            --bg: #fafbfc;
+            --card: #ffffff;
+            --text: #1a1d23;
+            --accent: #2563eb;
+            --accent2: #7c3aed;
+            --warn: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #e5e7eb;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            --radius: 16px;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+            --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: var(--font-sans);
+            background: linear-gradient(135deg, #f0f4ff 0%, #faf5ff 50%, #f0fdf4 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.3rem;
+            background: linear-gradient(135deg, #1e3a5f, #4c1d95);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+        .subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            transition: 0.2s;
+        }
+        .card:hover {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .badge-theta {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .badge-pair {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .badge-warn {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .seq-input-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .seq-input {
+            flex: 1;
+            min-width: 260px;
+            padding: 12px 16px;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            letter-spacing: 0.08em;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            outline: none;
+            transition: 0.2s;
+            background: #f9fafb;
+            text-transform: uppercase;
+        }
+        .seq-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            background: #fff;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            letter-spacing: 0.01em;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        .btn-accent {
+            background: var(--accent2);
+            color: #fff;
+        }
+        .btn-accent:hover {
+            background: #6d28d9;
+            transform: translateY(-1px);
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+        }
+        .seq-display {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            letter-spacing: 0.1em;
+            padding: 14px 18px;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 12px;
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            line-height: 2;
+        }
+        .seq-display .pos {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin: 0 1px;
+        }
+        .seq-display .base {
+            display: inline-block;
+            width: 32px;
+            height: 36px;
+            line-height: 36px;
+            text-align: center;
+            border-radius: 6px;
+            font-weight: 700;
+            transition: 0.3s;
+            cursor: default;
+            position: relative;
+        }
+        .base-A {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .base-C {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .base-G {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .base-U {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+        .base-highlight-pair {
+            box-shadow: 0 0 0 3px #10b981, 0 0 16px rgba(16, 185, 129, 0.5);
+            z-index: 2;
+            transform: scale(1.08);
+        }
+        .base-highlight-unpaired {
+            box-shadow: 0 0 0 3px #94a3b8;
+            opacity: 0.7;
+        }
+        .base-highlight-current {
+            animation: pulse 0.7s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 3px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 6px #f59e0b, 0 0 24px rgba(245, 158, 11, 0.7);
+            }
+        }
+        .matrix-wrapper {
+            overflow-x: auto;
+            padding: 8px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .matrix-table {
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            margin: 0 auto;
+        }
+        .matrix-table th,
+        .matrix-table td {
+            width: 42px;
+            height: 42px;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #e5e7eb;
+            transition: 0.25s;
+            cursor: default;
+            position: relative;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .matrix-table th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #475569;
+            border: 2px solid #cbd5e1;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+        }
+        .matrix-table .row-header {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #475569;
+            border: 2px solid #cbd5e1;
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            font-size: 0.75rem;
+        }
+        .matrix-cell-empty {
+            background: #f9fafb;
+            color: #cbd5e1;
+        }
+        .matrix-cell-init {
+            background: #f0fdf4;
+            color: #86a89d;
+            font-weight: 400;
+        }
+        .matrix-cell-computed {
+            background: #ffffff;
+            color: #1e293b;
+            cursor: pointer;
+        }
+        .matrix-cell-computed:hover {
+            background: #eff6ff;
+            box-shadow: inset 0 0 0 2px #3b82f6;
+            z-index: 5;
+            transform: scale(1.08);
+        }
+        .matrix-cell-active {
+            background: #fef3c7 !important;
+            box-shadow: inset 0 0 0 3px #f59e0b !important;
+            animation: cellPulse 0.8s ease-in-out infinite;
+            z-index: 6;
+            color: #92400e !important;
+            font-weight: 800 !important;
+            font-size: 0.9rem !important;
+        }
+        @keyframes cellPulse {
+            0%,
+            100% {
+                box-shadow: inset 0 0 0 3px #f59e0b, 0 0 12px rgba(245, 158, 11, 0.5);
+            }
+            50% {
+                box-shadow: inset 0 0 0 5px #f59e0b, 0 0 22px rgba(245, 158, 11, 0.8);
+            }
+        }
+        .matrix-cell-traceback {
+            background: #d1fae5 !important;
+            box-shadow: inset 0 0 0 3px #10b981 !important;
+            z-index: 4;
+            color: #065f46 !important;
+            font-weight: 800 !important;
+        }
+        .matrix-cell-considered {
+            background: #fefce8 !important;
+            box-shadow: inset 0 0 0 1px #eab308 !important;
+        }
+        .formula-box {
+            background: #1e293b;
+            color: #e2e8f0;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            padding: 16px 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            line-height: 1.7;
+        }
+        .formula-box .hl {
+            color: #fbbf24;
+            font-weight: 700;
+        }
+        .formula-box .hl2 {
+            color: #34d399;
+            font-weight: 700;
+        }
+        .formula-box .hl3 {
+            color: #f472b6;
+            font-weight: 700;
+        }
+        .structure-viz {
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            letter-spacing: 0.08em;
+            padding: 16px 20px;
+            background: #f0fdf4;
+            border-radius: 12px;
+            display: inline-block;
+            line-height: 2;
+            border: 2px solid #bbf7d0;
+        }
+        .structure-viz .paired {
+            color: #059669;
+            font-weight: 800;
+        }
+        .structure-viz .unpaired {
+            color: #94a3b8;
+        }
+        .arc-row {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 0.06em;
+            color: #6366f1;
+            line-height: 1.3;
+            white-space: pre;
+            padding: 4px 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin: 12px 0;
+        }
+        .info-item {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+        .info-item .label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+        .info-item .value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            font-family: var(--font-mono);
+        }
+        .tooltip {
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dotted #64748b;
+        }
+        .legend-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 0.8rem;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-right: 4px;
+        }
+        .progress-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+        .step-indicator {
+            font-weight: 700;
+            color: #7c3aed;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 768px) {
+            .matrix-table th,
+            .matrix-table td {
+                width: 32px;
+                height: 32px;
+                font-size: 0.7rem;
+            }
+            .seq-display {
+                font-size: 1rem;
+            }
+            .seq-display .base {
+                width: 24px;
+                height: 28px;
+                line-height: 28px;
+                font-size: 0.8rem;
+            }
+            .card {
+                padding: 16px 12px;
+            }
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧬 Nussinov-Jacobson RNA 折叠算法</h1>
+        <p class="subtitle">动态规划 · 碱基对最大化 · 最小环长 θ=3 · 互动演示</p>
+
+        <!-- 算法简介 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="badge badge-info">核心概念</span>
+                <span>Nussinov-Jacobson 模型 (1978)</span>
+            </div>
+            <p style="margin-bottom:10px;">
+                <strong>目标：</strong>给定一条RNA序列 <em>ω</em>，在所有<strong>无交叉</strong>（无假结）的二级结构中，找到<strong>碱基配对数量最多</strong>的结构。
+            </p>
+            <p style="margin-bottom:10px;">
+                <strong>规范配对：</strong>
+                <span style="color:#166534;font-weight:700;">G-C</span>（3个氢键）、
+                <span style="color:#1e40af;font-weight:700;">A-U</span>（2个氢键）、
+                <span style="color:#9d174d;font-weight:700;">G-U</span>（Wobble，1个氢键）。
+            </p>
+            <p style="margin-bottom:4px;">
+                <span class="badge badge-theta">θ = 3</span>
+                <strong>最小环长约束：</strong>配对位置 <em>i</em> 和 <em>j</em> 之间至少需要 <strong>3个未配对碱基</strong>（即 j − i − 1 ≥ 3，等价于 j ≥ i + 4）。
+                这模拟了RNA中<strong>发夹环（hairpin loop）</strong>的最小尺寸——太小的环在热力学上极不稳定。
+            </p>
+            <div class="legend-row" style="margin-top:8px;">
+                <span><span class="legend-dot" style="background:#10b981;"></span> 合法配对区间 (j≥i+4)</span>
+                <span><span class="legend-dot" style="background:#ef4444;"></span> θ约束排除 (j−i≤3)</span>
+                <span><span class="legend-dot" style="background:#fbbf24;"></span> 当前计算中</span>
+                <span><span class="legend-dot" style="background:#d1fae5;border:2px solid #10b981;"></span> 回溯路径</span>
+            </div>
+        </div>
+
+        <!-- 序列输入 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="badge badge-pair">输入序列</span>
+                <span>编辑RNA序列（仅A/C/G/U）</span>
+            </div>
+            <div class="seq-input-row">
+                <input type="text" class="seq-input" id="seqInput" value="GGGAAACCC" maxlength="18"
+                placeholder="输入RNA序列，如GGGAAACCC" autocomplete="off">
+                <button class="btn btn-primary" onclick="resetAll()">🔄 重置并计算</button>
+                <button class="btn btn-secondary" onclick="loadExample('GGGAAACCC')">📌 示例1: GGGAAACCC</button>
+                <button class="btn btn-secondary" onclick="loadExample('CGGAUACUU')">📌 示例2: CGGAUACUU</button>
+                <button class="btn btn-secondary" onclick="loadExample('GCGAAAACGC')">📌 示例3: GCGAAAACGC</button>
+            </div>
+            <div style="margin-top:14px;">
+                <span style="font-weight:600;color:#64748b;">序列 & 位置索引：</span>
+                <div class="seq-display" id="seqDisplay"></div>
+            </div>
+            <div style="margin-top:8px;font-size:0.8rem;color:#64748b;" id="thetaInfo"></div>
+        </div>
+
+        <!-- DP矩阵 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="badge badge-warn">DP 矩阵</span>
+                <span>N[i][j] = 区间 [i, j] 内最大碱基配对数</span>
+                <span class="step-indicator" id="stepLabel"></span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%;"></div></div>
+            <div class="btn-group">
+                <button class="btn btn-accent btn-sm" onclick="stepForward()">▶ 下一步</button>
+                <button class="btn btn-secondary btn-sm" onclick="stepBackward()">◀ 上一步</button>
+                <button class="btn btn-secondary btn-sm" onclick="autoPlay()">⏩ 自动播放</button>
+                <button class="btn btn-secondary btn-sm" onclick="jumpToEnd()">⏭ 跳至完成</button>
+                <button class="btn btn-secondary btn-sm" onclick="startTraceback()">🔍 开始回溯</button>
+                <span style="font-size:0.8rem;color:#64748b;margin-left:8px;" id="speedLabel">速度: 1x</span>
+                <input type="range" id="speedSlider" min="1" max="8" value="3" style="width:80px;"
+                oninput="autoPlaySpeed=parseInt(this.value);document.getElementById('speedLabel').textContent='速度: '+this.value+'x';">
+            </div>
+            <div class="matrix-wrapper" id="matrixContainer"></div>
+            <div class="legend-row" style="margin-top:8px;">
+                <span><span class="legend-dot" style="background:#f0fdf4;border:1px solid #cbd5e1;"></span> 初始化=0</span>
+                <span><span class="legend-dot" style="background:#fff;border:1px solid #d1d5db;"></span> 已计算</span>
+                <span><span class="legend-dot" style="background:#fef3c7;border:3px solid #f59e0b;"></span> 正在计算</span>
+                <span><span class="legend-dot" style="background:#d1fae5;border:3px solid #10b981;"></span> 回溯路径</span>
+                <span style="margin-left:12px;font-size:0.75rem;color:#94a3b8;">点击已计算的单元格查看详情</span>
+            </div>
+        </div>
+
+        <!-- 当前步骤详情 -->
+        <div class="card" id="stepDetailCard">
+            <div class="card-header">
+                <span class="badge badge-info">当前步骤</span>
+                <span id="stepDetailTitle">点击"下一步"开始填充矩阵</span>
+            </div>
+            <div class="formula-box" id="formulaDisplay">
+                <span style="color:#94a3b8;">等待计算...</span>
+            </div>
+            <div id="pairingCheckDisplay" style="margin-top:10px;font-size:0.85rem;color:#64748b;"></div>
+        </div>
+
+        <!-- 回溯结果 -->
+        <div class="card" id="tracebackCard" style="display:none;">
+            <div class="card-header">
+                <span class="badge badge-pair">🎯 最优结构</span>
+                <span>回溯结果</span>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="label">最大配对数</div>
+                    <div class="value" id="maxPairsValue">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">点括号结构</div>
+                    <div class="value structure-viz" id="dotBracketDisplay">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">配对列表</div>
+                    <div class="value" id="pairsList" style="font-size:0.85rem;">-</div>
+                </div>
+            </div>
+            <div style="margin-top:10px;">
+                <span style="font-weight:600;">弧图（配对连线）：</span>
+                <div class="arc-row" id="arcDisplay"></div>
+                <div class="seq-display" id="seqDisplayTB" style="font-size:1rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 全局状态 ====================
+        const THETA = 3; // 最小环长
+        let seq = [];
+        let n = 0;
+        let dpMatrix = []; // dp[i][j] = 区间[i,j]最大配对数 (0-based)
+        let choiceMatrix = []; // choice[i][j] = {type:'unpaired'} 或 {type:'paired', k:...}
+        let computationOrder = []; // 按计算顺序排列的单元格 [{i,j,l}]
+        let currentStepIndex = -1; // -1表示初始化完成，0开始第一个实际计算
+        let tracebackCells = []; // 回溯路径上的单元格
+        let finalStructure = null; // 回溯得到的结构字符串
+        let finalPairs = [];
+        let autoPlayTimer = null;
+        let autoPlaySpeed = 3;
+        let computedSet = new Set(); // 已计算的单元格 "i,j"
+
+        // ==================== 辅助函数 ====================
+        function getBaseClass(base) {
+            const map = { 'A': 'base-A', 'C': 'base-C', 'G': 'base-G', 'U': 'base-U' };
+            return map[base] || '';
+        }
+
+        function canPair(a, b) {
+            const pairs = [
+                ['G', 'C'],
+                ['C', 'G'],
+                ['A', 'U'],
+                ['U', 'A'],
+                ['G', 'U'],
+                ['U', 'G']
+            ];
+            return pairs.some(([x, y]) => x === a && y === b);
+        }
+
+        function pairScore(a, b) {
+            if (!canPair(a, b)) return 0;
+            if ((a === 'G' && b === 'C') || (a === 'C' && b === 'G')) return 3; // 简化：所有规范配对=1
+            if ((a === 'A' && b === 'U') || (a === 'U' && b === 'A')) return 2;
+            if ((a === 'G' && b === 'U') || (a === 'U' && b === 'G')) return 1;
+            return 0;
+        }
+
+        function isValidPairing(i, j) {
+            // 满足θ约束：j-i-1 >= THETA，即j-i >= THETA+1
+            return (j - i) >= (THETA + 1);
+        }
+
+        // ==================== 核心DP计算 ====================
+        function computeAllDP() {
+            dpMatrix = [];
+            choiceMatrix = [];
+            computationOrder = [];
+            computedSet = new Set();
+            for (let i = 0; i < n; i++) {
+                dpMatrix[i] = new Array(n).fill(0);
+                choiceMatrix[i] = new Array(n).fill(null);
+            }
+            // 初始化：所有j-i <= THETA 的区间为0（无法形成合法环）
+            for (let i = 0; i < n; i++) {
+                for (let j = i; j <= Math.min(i + THETA, n - 1); j++) {
+                    dpMatrix[i][j] = 0;
+                    choiceMatrix[i][j] = { type: 'init' };
+                    computedSet.add(`${i},${j}`);
+                }
+            }
+            // 按区间长度递增计算
+            for (let len = THETA + 2; len <= n; len++) {
+                for (let i = 0; i <= n - len; i++) {
+                    let j = i + len - 1;
+                    computationOrder.push({ i, j, len });
+                }
+            }
+            // 执行所有计算
+            for (let step of computationOrder) {
+                computeCell(step.i, step.j);
+                computedSet.add(`${step.i},${step.j}`);
+            }
+        }
+
+        function computeCell(i, j) {
+            // 情况1: i未配对
+            let bestScore = dpMatrix[i + 1][j];
+            let bestChoice = { type: 'unpaired' };
+
+            // 情况2: i与k配对，k满足θ约束
+            let minK = i + THETA + 1; // k >= i+4
+            for (let k = minK; k <= j; k++) {
+                let score_ik = pairScore(seq[i], seq[k]);
+                if (score_ik === 0) continue; // 不能配对
+                let leftScore = (i + 1 <= k - 1) ? dpMatrix[i + 1][k - 1] : 0;
+                let rightScore = (k + 1 <= j) ? dpMatrix[k + 1][j] : 0;
+                let total = score_ik + leftScore + rightScore;
+                if (total > bestScore) {
+                    bestScore = total;
+                    bestChoice = { type: 'paired', k: k, score_ik: score_ik };
+                }
+            }
+            dpMatrix[i][j] = bestScore;
+            choiceMatrix[i][j] = bestChoice;
+        }
+
+        function getCellChoices(i, j) {
+            // 返回所有考虑的选项（用于展示）
+            let choices = [];
+            // 选项A: i未配对
+            choices.push({ desc: 'i未配对', score: dpMatrix[i + 1] ? dpMatrix[i + 1][j] : 0, k: null, type: 'unpaired' });
+            // 选项B: i与各k配对
+            let minK = i + THETA + 1;
+            for (let k = minK; k <= j; k++) {
+                let sc = pairScore(seq[i], seq[k]);
+                if (sc === 0) continue;
+                let left = (i + 1 <= k - 1) ? dpMatrix[i + 1][k - 1] : 0;
+                let right = (k + 1 <= j) ? dpMatrix[k + 1][j] : 0;
+                let total = sc + left + right;
+                choices.push({ desc: `i(${i + 1})配对k(${k + 1}) [${seq[i]}-${seq[k]}]`, score: total, k: k,
+                    type: 'paired', left, right, sc });
+            }
+            choices.sort((a, b) => b.score - a.score);
+            return choices;
+        }
+
+        // ==================== 回溯 ====================
+        function doTraceback() {
+            tracebackCells = [];
+            finalPairs = [];
+            finalStructure = new Array(n).fill('.');
+            tracebackRecursive(0, n - 1);
+            // 构建结构字符串
+            for (let [a, b] of finalPairs) {
+                finalStructure[a] = '(';
+                finalStructure[b] = ')';
+            }
+            finalStructure = finalStructure.join('');
+            return { pairs: finalPairs, structure: finalStructure, score: dpMatrix[0][n - 1] };
+        }
+
+        function tracebackRecursive(i, j) {
+            if (i > j || i < 0 || j >= n) return;
+            if (!computedSet.has(`${i},${j}`)) return;
+            tracebackCells.push({ i, j });
+            let choice = choiceMatrix[i][j];
+            if (!choice || choice.type === 'init') return;
+            if (choice.type === 'unpaired') {
+                tracebackRecursive(i + 1, j);
+            } else if (choice.type === 'paired') {
+                let k = choice.k;
+                finalPairs.push([i, k]);
+                tracebackRecursive(i + 1, k - 1);
+                tracebackRecursive(k + 1, j);
+            }
+        }
+
+        // ==================== 渲染 ====================
+        function renderSequence(containerId, highlightPaired = null, highlightUnpaired = null, highlightCurrent = null) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            let html = '';
+            for (let i = 0; i < n; i++) {
+                let cls = getBaseClass(seq[i]);
+                if (highlightPaired && highlightPaired.has(i)) cls += ' base-highlight-pair';
+                if (highlightUnpaired && highlightUnpaired.has(i)) cls += ' base-highlight-unpaired';
+                if (highlightCurrent && highlightCurrent.has(i)) cls += ' base-highlight-current';
+                html +=
+                    `<span class="pos"><span style="font-size:0.65rem;color:#94a3b8;">${i+1}</span><span class="base ${cls}">${seq[i]}</span></span>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function renderMatrix() {
+            const container = document.getElementById('matrixContainer');
+            if (!container) return;
+            let html = '<table class="matrix-table"><thead><tr><th style="width:36px;">i\\j</th>';
+            for (let j = 0; j < n; j++) {
+                html += `<th>${j+1}<br><span style="font-size:0.65rem;">${seq[j]}</span></th>`;
+            }
+            html += '</tr></thead><tbody>';
+            for (let i = 0; i < n; i++) {
+                html +=
+                    `<tr><td class="row-header">${i+1}<br><span style="font-size:0.6rem;">${seq[i]}</span></td>`;
+                for (let j = 0; j < n; j++) {
+                    if (j < i) {
+                        html += '<td class="matrix-cell-empty">·</td>';
+                    } else {
+                        let cellId = `cell-${i}-${j}`;
+                        let classes = [];
+                        let displayVal = '';
+                        let isComputed = computedSet.has(`${i},${j}`);
+                        if (isComputed) {
+                            displayVal = dpMatrix[i][j];
+                            classes.push('matrix-cell-computed');
+                        } else if (j - i <= THETA) {
+                            displayVal = '0';
+                            classes.push('matrix-cell-init');
+                        } else {
+                            displayVal = '?';
+                            classes.push('matrix-cell-empty');
+                        }
+                        // 检查是否是当前活动单元格
+                        if (currentStepIndex >= 0 && currentStepIndex < computationOrder.length) {
+                            let curr = computationOrder[currentStepIndex];
+                            if (curr.i === i && curr.j === j) {
+                                classes.push('matrix-cell-active');
+                            }
+                        }
+                        // 检查回溯路径
+                        if (tracebackCells.some(tc => tc.i === i && tc.j === j)) {
+                            classes = classes.filter(c => c !== 'matrix-cell-active');
+                            classes.push('matrix-cell-traceback');
+                        }
+                        html +=
+                            `<td class="${classes.join(' ')}" id="${cellId}" data-i="${i}" data-j="${j}" 
+                     onclick="onCellClick(${i},${j})" 
+                     title="区间[${i+1},${j+1}] | ${seq.slice(i,j+1).join('')} | 值=${displayVal}">${displayVal}</td>`;
+                    }
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function onCellClick(i, j) {
+            if (!computedSet.has(`${i},${j}`)) return;
+            if (j - i <= THETA) {
+                showStepDetail(i, j, true);
+                return;
+            }
+            showStepDetail(i, j, false);
+        }
+
+        function showStepDetail(i, j, isInit = false) {
+            const title = document.getElementById('stepDetailTitle');
+            const formula = document.getElementById('formulaDisplay');
+            const pairingCheck = document.getElementById('pairingCheckDisplay');
+            if (isInit) {
+                title.textContent = `单元格 [${i+1}, ${j+1}] — 初始化`;
+                formula.innerHTML =
+                    `<span style="color:#94a3b8;">N[${i+1}][${j+1}] = 0</span>\n<span style="color:#86a89d;">区间长度 ${j-i+1} ≤ θ+1 (${THETA+1})，无法形成合法环，自动为0。</span>`;
+                pairingCheck.textContent =
+                    `间距 j−i = ${j-i} ≤ θ(${THETA}) → 若配对则中间仅有${j-i-1 < 0 ? 0 : j-i-1}个碱基 < ${THETA} → 不允许`;
+                return;
+            }
+            title.textContent = `单元格 [${i+1}, ${j+1}] — 区间 "${seq.slice(i,j+1).join('')}" (长度${j-i+1})`;
+            let choices = getCellChoices(i, j);
+            let best = choiceMatrix[i][j];
+            let bestScore = dpMatrix[i][j];
+            let formulaText = `计算 N[${i+1}][${j+1}]：区间[${i+1},${j+1}] "${seq.slice(i,j+1).join('')}"\n\n`;
+            formulaText += `N[${i+1}][${j+1}] = max(\n`;
+            formulaText +=
+                `  <span style="color:#fbbf24;">① N[${i+2}][${j+1}] = ${dpMatrix[i+1]?.[j] ?? '?'}</span>  ← i(${i+1})未配对\n`;
+            let minK = i + THETA + 1;
+            for (let k = minK; k <= j; k++) {
+                let sc = pairScore(seq[i], seq[k]);
+                if (sc === 0) continue;
+                let leftVal = (i + 1 <= k - 1) ? dpMatrix[i + 1][k - 1] : 0;
+                let rightVal = (k + 1 <= j) ? dpMatrix[k + 1][j] : 0;
+                let total = sc + leftVal + rightVal;
+                let marker = (best && best.type === 'paired' && best.k === k) ? ' ★' : '';
+                formulaText +=
+                    `  <span style="color:${marker?'#34d399':'#e2e8f0'};">② k=${k+1}: score(${seq[i]},${seq[k]})=${sc} + N[${i+2}][${k}] + N[${k+2}][${j+1}] = ${sc} + ${leftVal} + ${rightVal} = ${total}${marker}</span>\n`;
+            }
+            formulaText += `)\n\n<span style="color:#34d399;font-weight:700;">最优值 = ${bestScore}</span>`;
+            if (best && best.type === 'paired') {
+                formulaText +=
+                    `\n<span style="color:#f472b6;">选择：位置${i+1}(${seq[i]})与位置${best.k+1}(${seq[best.k]})配对</span>`;
+            } else if (best && best.type === 'unpaired') {
+                formulaText += `\n<span style="color:#f472b6;">选择：位置${i+1}(${seq[i]})未配对</span>`;
+            }
+            formula.innerHTML = formulaText;
+            // 配对检查
+            let checkText = `θ约束检查：配对需要 j−i−1 ≥ θ(${THETA})，即 j−i ≥ ${THETA+1}。`;
+            checkText += ` 当前区间 j−i = ${j-i} ≥ ${THETA+1} ✓ `;
+            checkText += `| 可配对k范围：k ∈ [i+θ+1, j] = [${i+THETA+2}, ${j+1}]`;
+            pairingCheck.textContent = checkText;
+        }
+
+        function updateAllRender() {
+            renderSequence('seqDisplay');
+            if (finalStructure) {
+                let pairedSet = new Set();
+                let unpairedSet = new Set();
+                for (let i = 0; i < n; i++) {
+                    if (finalStructure[i] === '.') unpairedSet.add(i);
+                    else pairedSet.add(i);
+                }
+                renderSequence('seqDisplayTB', pairedSet, unpairedSet);
+                document.getElementById('dotBracketDisplay').innerHTML =
+                    finalStructure.split('').map((c, i) => c === '.' ?
+                        `<span class="unpaired">.</span>` :
+                        `<span class="paired">${c}</span>`).join('');
+                document.getElementById('maxPairsValue').textContent = finalPairs.length;
+                document.getElementById('pairsList').textContent =
+                    finalPairs.map(([a, b]) => `(${a+1},${b+1})[${seq[a]}-${seq[b]}]`).join(', ') || '无配对';
+                // 弧图
+                let arcLines = [];
+                for (let level = 0; level < 10; level++) {
+                    let line = '';
+                    for (let pos = 0; pos < n; pos++) {
+                        let found = false;
+                        for (let [a, b] of finalPairs) {
+                            let span = b - a;
+                            let mid = (a + b) / 2;
+                            let dist = Math.abs(pos - mid);
+                            let maxDist = span / 2;
+                            let targetLevel = Math.round((1 - dist / maxDist) * 8);
+                            if (targetLevel === level && pos >= a && pos <= b) {
+                                if (pos === a) line += '╭';
+                                else if (pos === b) line += '╮';
+                                else line += '─';
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) line += ' ';
+                    }
+                    if (line.trim()) arcLines.push(line);
+                }
+                document.getElementById('arcDisplay').textContent = arcLines.join('\n') || '(配对连线)';
+                document.getElementById('tracebackCard').style.display = 'block';
+            }
+            // 更新theta信息
+            document.getElementById('thetaInfo').innerHTML =
+                `<span class="badge badge-theta">θ=${THETA}</span> 最小环长约束：配对(i,j)需要 <strong>j−i ≥ ${THETA+1}</strong>（即中间至少${THETA}个未配对碱基）。` +
+                ` 例如：位置1与位置${THETA+2}配对时，中间有位置2~${THETA+1}共${THETA}个碱基 ✓` +
+                `；位置1与位置${THETA+1}配对时，中间仅有${THETA-1}个碱基 ✗`;
+            // 更新进度
+            let totalCells = computationOrder.length;
+            let doneCells = currentStepIndex + 1;
+            let pct = totalCells > 0 ? Math.round((doneCells / totalCells) * 100) : 0;
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('stepLabel').textContent =
+                currentStepIndex < 0 ? '(初始化完成)' :
+                doneCells >= totalCells ? `已完成 ${totalCells}/${totalCells} 个单元格` :
+                `步骤 ${doneCells}/${totalCells} (${pct}%)`;
+            // 如果全部完成且未回溯，显示提示
+            if (doneCells >= totalCells && totalCells > 0 && !finalStructure) {
+                document.getElementById('stepDetailTitle').textContent =
+                    '✅ 矩阵填充完成！点击"开始回溯"查看最优结构。';
+            }
+        }
+
+        function renderCurrentStep() {
+            if (currentStepIndex >= 0 && currentStepIndex < computationOrder.length) {
+                let curr = computationOrder[currentStepIndex];
+                showStepDetail(curr.i, curr.j, false);
+            } else if (currentStepIndex < 0) {
+                document.getElementById('stepDetailTitle').textContent = '矩阵已初始化（θ约束区间设为0）';
+                document.getElementById('formulaDisplay').innerHTML =
+                    '<span style="color:#94a3b8;">所有 j−i ≤ θ(' + THETA +
+                    ') 的区间已初始化为0。\n点击"下一步"开始填充第一个可配对区间。</span>';
+                document.getElementById('pairingCheckDisplay').textContent = '';
+            }
+        }
+
+        // ==================== 步骤控制 ====================
+        function stepForward() {
+            if (currentStepIndex < computationOrder.length - 1) {
+                currentStepIndex++;
+                let curr = computationOrder[currentStepIndex];
+                computeCell(curr.i, curr.j);
+                computedSet.add(`${curr.i},${curr.j}`);
+                tracebackCells = [];
+                finalStructure = null;
+                finalPairs = [];
+                document.getElementById('tracebackCard').style.display = 'none';
+                renderMatrix();
+                renderCurrentStep();
+                updateAllRender();
+                // 高亮当前单元格对应的序列位置
+                highlightCurrentPositions(curr.i, curr.j);
+            } else if (currentStepIndex === computationOrder.length - 1 && computationOrder.length > 0) {
+                // 已经完成
+                document.getElementById('stepDetailTitle').textContent =
+                    '✅ 所有单元格已计算完毕！点击"开始回溯"查看最优结构。';
+            }
+        }
+
+        function stepBackward() {
+            if (currentStepIndex >= 0) {
+                // 撤销当前步骤
+                let curr = computationOrder[currentStepIndex];
+                dpMatrix[curr.i][curr.j] = 0;
+                choiceMatrix[curr.i][curr.j] = null;
+                computedSet.delete(`${curr.i},${curr.j}`);
+                currentStepIndex--;
+                tracebackCells = [];
+                finalStructure = null;
+                finalPairs = [];
+                document.getElementById('tracebackCard').style.display = 'none';
+                renderMatrix();
+                renderCurrentStep();
+                updateAllRender();
+                if (currentStepIndex >= 0) {
+                    let prev = computationOrder[currentStepIndex];
+                    highlightCurrentPositions(prev.i, prev.j);
+                } else {
+                    renderSequence('seqDisplay');
+                }
+            }
+        }
+
+        function highlightCurrentPositions(i, j) {
+            let highlightSet = new Set([i, j]);
+            renderSequence('seqDisplay', null, null, highlightSet);
+        }
+
+        function autoPlay() {
+            if (autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+                document.querySelector('.btn-secondary:nth-child(3)').textContent = '⏩ 自动播放';
+                return;
+            }
+            document.querySelector('.btn-secondary:nth-child(3)').textContent = '⏸ 暂停';
+            autoPlayTimer = setInterval(() => {
+                if (currentStepIndex >= computationOrder.length - 1) {
+                    clearInterval(autoPlayTimer);
+                    autoPlayTimer = null;
+                    document.querySelector('.btn-secondary:nth-child(3)').textContent = '⏩ 自动播放';
+                    if (!finalStructure && computationOrder.length > 0) {
+                        document.getElementById('stepDetailTitle').textContent =
+                            '✅ 矩阵填充完成！点击"开始回溯"查看最优结构。';
+                    }
+                    return;
+                }
+                stepForward();
+            }, Math.max(150, 600 - autoPlaySpeed * 55));
+        }
+
+        function jumpToEnd() {
+            if (autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+                document.querySelector('.btn-secondary:nth-child(3)').textContent = '⏩ 自动播放';
+            }
+            while (currentStepIndex < computationOrder.length - 1) {
+                currentStepIndex++;
+                let curr = computationOrder[currentStepIndex];
+                computeCell(curr.i, curr.j);
+                computedSet.add(`${curr.i},${curr.j}`);
+            }
+            tracebackCells = [];
+            finalStructure = null;
+            finalPairs = [];
+            document.getElementById('tracebackCard').style.display = 'none';
+            renderMatrix();
+            renderCurrentStep();
+            updateAllRender();
+            document.getElementById('stepDetailTitle').textContent =
+                '✅ 所有单元格已计算完毕！点击"开始回溯"查看最优结构。';
+            renderSequence('seqDisplay');
+        }
+
+        function startTraceback() {
+            if (autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+                document.querySelector('.btn-secondary:nth-child(3)').textContent = '⏩ 自动播放';
+            }
+            // 确保所有单元格已计算
+            while (currentStepIndex < computationOrder.length - 1) {
+                currentStepIndex++;
+                let curr = computationOrder[currentStepIndex];
+                computeCell(curr.i, curr.j);
+                computedSet.add(`${curr.i},${curr.j}`);
+            }
+            let result = doTraceback();
+            finalStructure = result.structure;
+            finalPairs = result.pairs;
+            document.getElementById('tracebackCard').style.display = 'block';
+            renderMatrix();
+            updateAllRender();
+            document.getElementById('stepDetailTitle').textContent =
+                `🎯 回溯完成！最优结构含 ${result.score} 个碱基对`;
+            document.getElementById('formulaDisplay').innerHTML =
+                `<span style="color:#34d399;">回溯路径经过的单元格已在矩阵中用绿色标出。</span>\n` +
+                `<span style="color:#e2e8f0;">最大配对数：${result.score}</span>\n` +
+                `<span style="color:#fbbf24;">结构：${result.structure}</span>\n` +
+                `<span style="color:#f472b6;">配对：${finalPairs.map(([a,b])=>`(${a+1},${b+1})[${seq[a]}-${seq[b]}]`).join(', ') || '无'}</span>`;
+            document.getElementById('pairingCheckDisplay').textContent = '';
+            // 高亮配对位置
+            let allPaired = new Set();
+            for (let [a, b] of finalPairs) { allPaired.add(a);
+                allPaired.add(b); }
+            let allUnpaired = new Set();
+            for (let i = 0; i < n; i++) { if (!allPaired.has(i)) allUnpaired.add(i); }
+            renderSequence('seqDisplay', allPaired, allUnpaired);
+        }
+
+        function resetAll() {
+            if (autoPlayTimer) {
+                clearInterval(autoPlayTimer);
+                autoPlayTimer = null;
+                document.querySelector('.btn-secondary:nth-child(3)').textContent = '⏩ 自动播放';
+            }
+            const input = document.getElementById('seqInput').value.toUpperCase().replace(/[^ACGU]/g, '');
+            if (input.length < 4) {
+                alert('序列至少需要4个核苷酸（A/C/G/U）');
+                return;
+            }
+            if (input.length > 18) {
+                alert('为保持矩阵可读性，序列长度限制为18个核苷酸以内');
+                return;
+            }
+            seq = input.split('');
+            n = seq.length;
+            currentStepIndex = -1;
+            tracebackCells = [];
+            finalStructure = null;
+            finalPairs = [];
+            computedSet = new Set();
+            dpMatrix = [];
+            choiceMatrix = [];
+            computationOrder = [];
+            computeAllDP();
+            // 重置为初始化状态
+            currentStepIndex = -1;
+            computedSet = new Set();
+            dpMatrix = [];
+            choiceMatrix = [];
+            computationOrder = [];
+            for (let i = 0; i < n; i++) {
+                dpMatrix[i] = new Array(n).fill(0);
+                choiceMatrix[i] = new Array(n).fill(null);
+            }
+            for (let i = 0; i < n; i++) {
+                for (let j = i; j <= Math.min(i + THETA, n - 1); j++) {
+                    dpMatrix[i][j] = 0;
+                    choiceMatrix[i][j] = { type: 'init' };
+                    computedSet.add(`${i},${j}`);
+                }
+            }
+            for (let len = THETA + 2; len <= n; len++) {
+                for (let i = 0; i <= n - len; i++) {
+                    let j = i + len - 1;
+                    computationOrder.push({ i, j, len });
+                }
+            }
+            document.getElementById('tracebackCard').style.display = 'none';
+            renderMatrix();
+            renderSequence('seqDisplay');
+            updateAllRender();
+            document.getElementById('stepDetailTitle').textContent = '矩阵已初始化 — 点击"下一步"开始填充';
+            document.getElementById('formulaDisplay').innerHTML =
+                '<span style="color:#94a3b8;">所有 j−i ≤ θ(3) 的区间已初始化为0。\n点击"下一步"开始按区间长度递增填充矩阵。</span>';
+            document.getElementById('pairingCheckDisplay').textContent = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('stepLabel').textContent = '(初始化完成)';
+        }
+
+        function loadExample(exampleSeq) {
+            document.getElementById('seqInput').value = exampleSeq;
+            resetAll();
+        }
+
+        // ==================== 初始化 ====================
+        function init() {
+            seq = document.getElementById('seqInput').value.toUpperCase().replace(/[^ACGU]/g, '').split('');
+            n = seq.length;
+            if (n < 4) {
+                seq = 'GGGAAACCC'.split('');
+                n = seq.length;
+                document.getElementById('seqInput').value = 'GGGAAACCC';
+            }
+            currentStepIndex = -1;
+            tracebackCells = [];
+            finalStructure = null;
+            finalPairs = [];
+            computedSet = new Set();
+            dpMatrix = [];
+            choiceMatrix = [];
+            computationOrder = [];
+            for (let i = 0; i < n; i++) {
+                dpMatrix[i] = new Array(n).fill(0);
+                choiceMatrix[i] = new Array(n).fill(null);
+            }
+            for (let i = 0; i < n; i++) {
+                for (let j = i; j <= Math.min(i + THETA, n - 1); j++) {
+                    dpMatrix[i][j] = 0;
+                    choiceMatrix[i][j] = { type: 'init' };
+                    computedSet.add(`${i},${j}`);
+                }
+            }
+            for (let len = THETA + 2; len <= n; len++) {
+                for (let i = 0; i <= n - len; i++) {
+                    let j = i + len - 1;
+                    computationOrder.push({ i, j, len });
+                }
+            }
+            renderMatrix();
+            renderSequence('seqDisplay');
+            updateAllRender();
+            document.getElementById('stepDetailTitle').textContent = '矩阵已初始化 — 点击"下一步"开始填充';
+            document.getElementById('formulaDisplay').innerHTML =
+                '<span style="color:#94a3b8;">所有 j−i ≤ θ(3) 的区间已初始化为0。\n点击"下一步"开始按区间长度递增填充矩阵。</span>';
+            document.getElementById('pairingCheckDisplay').textContent = '';
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') { e.preventDefault();
+                stepForward(); }
+            if (e.key === 'ArrowLeft') { e.preventDefault();
+                stepBackward(); }
+            if (e.key === 'ArrowDown') { e.preventDefault();
+                startTraceback(); }
+            if (e.key === ' ') { e.preventDefault();
+                autoPlay(); }
+        });
+    </script>
+</body>
+</html>
